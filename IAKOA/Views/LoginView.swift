@@ -99,7 +99,7 @@ struct LoginView: View {
             Alert(
                 title: Text("Connexion réussie"),
                 message: Text("Vous êtes maintenant connecté."),
-                dismissButton: .default(Text("OK")) {
+                dismissButton: .default(Text("Ok")) {
                     isLoggedIn = true
                 }
             )

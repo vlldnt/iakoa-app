@@ -3,26 +3,27 @@ import FirebaseAuth
 import Firebase
 
 struct ContentView: View {
-
     @State private var selectedTab = 0
     @State private var isLoggedIn = false
 
     init() {
-        FirebaseApp.configure()
+        if FirebaseApp.app() == nil {
+            FirebaseApp.configure()
+        }
     }
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Text("Accueil")
                 .tabItem {
-                    Image(systemName: "house")
-                    Text("Accueil")
+                    Image(systemName: "bubbles.and.sparkles")
+                    Text("Évènements")
                 }
                 .tag(0)
 
             Text("Favoris")
                 .tabItem {
-                    Image(systemName: "star")
+                    Image(systemName: "hand.thumbsup.fill")
                     Text("Favoris")
                 }
                 .tag(1)
@@ -34,18 +35,29 @@ struct ContentView: View {
                 }
                 .tag(2)
 
-            AuthView(isLoggedIn: $isLoggedIn)
-                .tabItem {
-                    Image(systemName: "person.circle")
-                    Text("Profil")
+            Group {
+                if isLoggedIn {
+                    ProfileView(isLoggedIn: $isLoggedIn)
+                } else {
+                    AuthView(isLoggedIn: $isLoggedIn)
                 }
-                .tag(3)
+            }
+            .tabItem {
+                Image(systemName: isLoggedIn ? "person.fill.checkmark" : "person.fill.xmark")
+                Text("Profil")
+            }
+            .tag(3)
+        }
+        .onAppear {
+            // Met à jour l'état de connexion si l'utilisateur est déjà connecté
+            isLoggedIn = Auth.auth().currentUser != nil
         }
         .onChange(of: isLoggedIn) {
-            selectedTab = 0
+            selectedTab = 3 // Revient à l'accueil après login/logout
         }
     }
 }
+
 
 #Preview {
     ContentView()
