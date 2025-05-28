@@ -69,7 +69,7 @@ struct AuthView: View {
         var body: some View {
             Button(action: action) {
                 Text(title)
-                    .fontWeight(.semibold)
+                    .fontWeight(isSelected ? .bold : .medium)
                     .foregroundColor(isSelected ? .white : .black)
                     .frame(maxWidth: .infinity)
                     .frame(height: 44)

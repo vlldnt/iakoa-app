@@ -15,14 +15,15 @@ struct SignInView: View {
     @State private var password: String = ""
     @State private var verifiedPassword: String = ""
     @State private var showAlert = false
+    @State private var alertTitle: String = ""
+    @State private var alertMessage: String = ""
     
     var body: some View {
-        VStack(spacing: 16) {
-            // Header
+        VStack(spacing: 14) {
+            
             Text("Vous n'avez pas encore de compte ?")
                 .fontWeight(.regular)
             
-            // Form fields
             Group {
                 TextField("Email", text: $email)
                     .padding(.horizontal, 10)
@@ -59,13 +60,17 @@ struct SignInView: View {
             }
             .font(.subheadline)
             
-            // Requierements
-            Text("L’email doit être valide et le mot de passe doit contenir au moins 8 caractères avec une majuscule et un chiffre.")
-                .font(.system(size: 11))
-                .foregroundColor(Color(UIColor.systemGray2))
-                .italic()
+            VStack(spacing: 5) {
+                Text("L’email doit être valide. Le mot de passe doit contenir ")
+                    .font(.system(size: 10))
+                    .foregroundColor(Color(UIColor.systemGray2))
+                    .italic()
+                Text("au moins 8 caractères avec une majuscule et un chiffre.")
+                    .font(.system(size: 10))
+                    .foregroundColor(Color(UIColor.systemGray2))
+                    .italic()
+            }
 
-            // Sign up button
             Button(action: {
                 signUp()
             }) {
@@ -78,7 +83,6 @@ struct SignInView: View {
                     .cornerRadius(8)
             }
             .disabled(!isFormValid)
-            .padding(.top, 6)
             
             // Divider with "or" text
             HStack {
@@ -88,6 +92,7 @@ struct SignInView: View {
                 
                 Text("ou créer avec")
                     .foregroundColor(.gray)
+                    .font(.system(size: 12))
                 
                 Rectangle()
                     .fill(Color.gray.opacity(0.3))
@@ -124,25 +129,18 @@ struct SignInView: View {
             }
             
             // Terms and conditions
-            VStack(spacing: 8) {
-                Text("En cliquant sur Créer votre compte vous acceptez nos")
-                    .foregroundColor(.gray)
-                    .fontWeight(.regular)
-                    .font(.custom("Poppins-Regular", size: 10))
-                Text("conditions d'utilisation.")
+            VStack(spacing: 0) {
+                Text("Conditions d'utilisation.")
                     .bold()
                     .foregroundColor(.gray)
                     .font(.custom("Poppins-Regular", size: 10))
             }
         }
-        .padding()
         .alert(isPresented: $showAlert) {
             Alert(
-                title: Text("Compte créé"),
-                message: Text("Vous êtes maintenant connecté."),
-                dismissButton: .default(Text("OK")) {
-                    isLoggedIn = true
-                }
+                title: Text(alertTitle),
+                message: Text(alertMessage),
+                dismissButton: .default(Text("OK"))
             )
         }
     }
@@ -182,19 +180,35 @@ struct SignInView: View {
             containsDigit(password) && containsUppercase(password)
         }
     
-    // Firebase sign up function
+    // SignUp function
     private func signUp() {
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
-            if let error = error {
-                print("Error creating account: \(error.localizedDescription)")
-            } else {
-                DispatchQueue.main.async {
-                    showAlert = true
+            if let error = error as NSError? {
+                if let errorCode = AuthErrorCode(rawValue: error.code) {
+                    switch errorCode {
+                    case .emailAlreadyInUse:
+                        alertTitle = "Erreur"
+                        alertMessage = "Cet email est déjà utilisé."
+                    default:
+                        alertTitle = "Erreur"
+                        alertMessage = error.localizedDescription
+                    }
+                } else {
+                    alertTitle = "Erreur"
+                    alertMessage = error.localizedDescription
                 }
-                print("Compte créé avec succès.")
+                isLoggedIn = false
+                showAlert = true
+            } else {
+                alertTitle = "Succès"
+                alertMessage = "Compte créé avec succès. Vous êtes maintenant connecté."
+                isLoggedIn = true
+                showAlert = true
             }
         }
     }
+
+
 }
 
 #Preview {

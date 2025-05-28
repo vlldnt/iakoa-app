@@ -51,8 +51,9 @@ struct LoginView: View {
                     .fill(Color.gray.opacity(0.3))
                     .frame(height: 1)
 
-                Text("ou")
+                Text("ou continuer avec")
                     .foregroundColor(.gray)
+                    .font(.system(size: 12))
 
                 Rectangle()
                     .fill(Color.gray.opacity(0.3))

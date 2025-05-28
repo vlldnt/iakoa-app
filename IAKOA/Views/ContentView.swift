@@ -14,7 +14,7 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            Text("Accueil")
+            EventView()
                 .tabItem {
                     Image(systemName: "bubbles.and.sparkles")
                     Text("Évènements")
