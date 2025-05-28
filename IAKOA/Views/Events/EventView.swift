@@ -34,28 +34,6 @@ struct EventView: View {
 
                         Text(event.pricing == 0 ? "Gratuit" : "\(Int(event.pricing)) €")
                             .font(.footnote)
-
-                        Text("Lat: \(String(format: "%.2f", event.location.latitude)), Lon: \(String(format: "%.2f", event.location.longitude))")
-                            .font(.caption2)
-                            .foregroundColor(.gray)
-
-                        HStack(spacing: 8) {
-                            if !event.facebookLink.isEmpty {
-                                Image("facebook-icon").resizable().frame(width: 20, height: 20)
-                            }
-                            if !event.instagramLink.isEmpty {
-                                Image("instagram-icon").resizable().frame(width: 20, height: 20)
-                            }
-                            if !event.youtubeLink.isEmpty {
-                                Image("youtube-icon").resizable().frame(width: 20, height: 20)
-                            }
-                            if !event.xLink.isEmpty {
-                                Image("x-icon").resizable().frame(width: 20, height: 20)
-                            }
-                            if !event.websiteLink.isEmpty {
-                                Image("website-icon").resizable().frame(width: 20, height: 20)
-                            }
-                        }
                     }
                     .padding()
                     .background(Color(.systemGray6))

@@ -28,7 +28,7 @@ struct ContentView: View {
                 }
                 .tag(1)
 
-            Text("Création d'un évènement")
+            CreateEventView()
                 .tabItem {
                     Image(systemName: "plus.circle")
                     Text("Créer")
@@ -49,11 +49,10 @@ struct ContentView: View {
             .tag(3)
         }
         .onAppear {
-            // Met à jour l'état de connexion si l'utilisateur est déjà connecté
             isLoggedIn = Auth.auth().currentUser != nil
         }
         .onChange(of: isLoggedIn) {
-            selectedTab = 3 // Revient à l'accueil après login/logout
+            selectedTab = 3
         }
     }
 }
