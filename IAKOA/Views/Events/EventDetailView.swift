@@ -190,9 +190,10 @@ struct EventDetailView: View {
             Map(position: $cameraPosition) {
                 Marker(event.name, coordinate: CLLocationCoordinate2D(latitude: event.location.latitude, longitude: event.location.longitude))
             }
-            .frame(height: 200)
             .cornerRadius(12)
+            .frame(height: 300)
             .frame(maxWidth: .infinity)
+
 
             VStack {
                 Text("Organisé par: \(event.creatorID)")

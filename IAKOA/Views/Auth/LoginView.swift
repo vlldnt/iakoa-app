@@ -8,15 +8,16 @@ struct LoginView: View {
     @State private var email: String = ""
     @State private var password: String = ""
     @State private var showAlert = false
+    @State private var alertMessage: String = ""
 
     enum AuthTab {
         case login, signup
     }
 
     var body: some View {
-        VStack(spacing: 23) {
+        VStack(spacing: 20) {
 
-            Text("Vous déjà avez un compte ?")
+            Text("Vous avez déjà un compte ?")
                 .fontWeight(.regular)
 
             Group {
@@ -34,6 +35,15 @@ struct LoginView: View {
             }
 
             Button(action: {
+                resetPassword()
+            }) {
+                Text("Mot de passe oublié ?")
+                    .font(.system(size: 12))
+                    .foregroundColor(Color(hex: "#2397FF"))
+            }
+            .padding(.top, 4)
+
+            Button(action: {
                 login()
             }) {
                 Text("Se connecter")
@@ -44,7 +54,6 @@ struct LoginView: View {
                     .background(Color(hex: "#2397FF"))
                     .cornerRadius(8)
             }
-            .padding(.top, 16)
 
             HStack {
                 Rectangle()
@@ -61,7 +70,7 @@ struct LoginView: View {
             }
 
             Button(action: {
-                // Action pour continuer avec Apple
+                // Continuer avec Apple
             }) {
                 HStack(spacing: 12) {
                     Image("apple-icon")
@@ -69,7 +78,6 @@ struct LoginView: View {
                         .frame(width: 35, height: 35)
 
                     Text("Continuer avec Apple")
-                        .fontWeight(.regular)
                         .foregroundColor(.black)
                 }
                 .padding(7)
@@ -79,7 +87,7 @@ struct LoginView: View {
             }
 
             Button(action: {
-                // Action pour continuer avec Google
+                // Continuer avec Google
             }) {
                 HStack(spacing: 12) {
                     Image("google-icon")
@@ -87,7 +95,6 @@ struct LoginView: View {
                         .frame(width: 35, height: 35)
 
                     Text("Continuer avec Google")
-                        .fontWeight(.regular)
                         .foregroundColor(.black)
                 }
                 .padding(7)
@@ -96,43 +103,47 @@ struct LoginView: View {
                 .cornerRadius(8)
             }
         }
+        .padding()
         .alert(isPresented: $showAlert) {
             Alert(
-                title: Text("Connexion réussie"),
-                message: Text("Vous êtes maintenant connecté."),
-                dismissButton: .default(Text("Ok")) {
-                    isLoggedIn = true
+                title: Text("Notification"),
+                message: Text(alertMessage),
+                dismissButton: .default(Text("OK")) {
+                    if alertMessage == "Connexion réussie" {
+                        isLoggedIn = true
+                    }
                 }
             )
         }
     }
 
-    private func tabButton(title: String, tab: AuthTab) -> some View {
-        Button(action: {
-            selectedTab = tab
-        }) {
-            Text(title)
-                .fontWeight(.semibold)
-                .foregroundColor(Color.white)
-                .padding(.vertical, 10)
-                .frame(maxWidth: .infinity)
-                .background(
-                    selectedTab == tab ? Color(hex: "#2397FF") : Color(UIColor.systemGray5)
-                )
-                .cornerRadius(1)
+    func login() {
+        Auth.auth().signIn(withEmail: email, password: password) { result, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    alertMessage = error.localizedDescription
+                } else {
+                    alertMessage = "Connexion réussie"
+                }
+                showAlert = true
+            }
         }
     }
 
-    func login() {
-        Auth.auth().signIn(withEmail: email, password: password) { result, error in
+    func resetPassword() {
+        guard !email.isEmpty else {
+            alertMessage = "Veuillez entrer votre adresse e-mail."
+            showAlert = true
+            return
+        }
+
+        Auth.auth().sendPasswordReset(withEmail: email) { error in
             if let error = error {
-                print(error.localizedDescription)
+                alertMessage = "Erreur : \(error.localizedDescription)"
             } else {
-                DispatchQueue.main.async {
-                    showAlert = true
-                }
-                print("Successfully logged in!")
+                alertMessage = "Un e-mail de réinitialisation a été envoyé à \(email)."
             }
+            showAlert = true
         }
     }
 }
@@ -153,7 +164,6 @@ extension Color {
     }
 }
 
-
 #Preview {
-    LoginView(isLoggedIn: .constant(false ))
+    LoginView(isLoggedIn: .constant(false))
 }
