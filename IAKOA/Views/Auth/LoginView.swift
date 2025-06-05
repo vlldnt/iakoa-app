@@ -1,5 +1,4 @@
 import SwiftUI
-import FirebaseAuth
 
 struct LoginView: View {
     @Binding var isLoggedIn: Bool
@@ -35,7 +34,22 @@ struct LoginView: View {
             }
 
             Button(action: {
-                resetPassword()
+                if email.isEmpty {
+                    alertMessage = "Veuillez entrer votre adresse e-mail."
+                    showAlert = true
+                    return
+                }
+                AuthServices.resetPassword(email: email) { result in
+                    DispatchQueue.main.async {
+                        switch result {
+                        case .success:
+                            alertMessage = "Un e-mail de réinitialisation a été envoyé à \(email)."
+                        case .failure(let error):
+                            alertMessage = "Erreur : \(error.localizedDescription)"
+                        }
+                        showAlert = true
+                    }
+                }
             }) {
                 Text("Mot de passe oublié ?")
                     .font(.system(size: 12))
@@ -44,7 +58,17 @@ struct LoginView: View {
             .padding(.top, 4)
 
             Button(action: {
-                login()
+                AuthServices.signIn(email: email, password: password) { result in
+                    DispatchQueue.main.async {
+                        switch result {
+                        case .success:
+                            alertMessage = "Connexion réussie"
+                        case .failure(let error):
+                            alertMessage = error.localizedDescription
+                        }
+                        showAlert = true
+                    }
+                }
             }) {
                 Text("Se connecter")
                     .fontWeight(.semibold)
@@ -116,54 +140,4 @@ struct LoginView: View {
             )
         }
     }
-
-    func login() {
-        Auth.auth().signIn(withEmail: email, password: password) { result, error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    alertMessage = error.localizedDescription
-                } else {
-                    alertMessage = "Connexion réussie"
-                }
-                showAlert = true
-            }
-        }
-    }
-
-    func resetPassword() {
-        guard !email.isEmpty else {
-            alertMessage = "Veuillez entrer votre adresse e-mail."
-            showAlert = true
-            return
-        }
-
-        Auth.auth().sendPasswordReset(withEmail: email) { error in
-            if let error = error {
-                alertMessage = "Erreur : \(error.localizedDescription)"
-            } else {
-                alertMessage = "Un e-mail de réinitialisation a été envoyé à \(email)."
-            }
-            showAlert = true
-        }
-    }
-}
-
-extension Color {
-    init(hex: String) {
-        let scanner = Scanner(string: hex)
-        _ = scanner.scanString("#")
-
-        var rgb: UInt64 = 0
-        scanner.scanHexInt64(&rgb)
-
-        let r = Double((rgb >> 16) & 0xFF) / 255.0
-        let g = Double((rgb >> 8) & 0xFF) / 255.0
-        let b = Double(rgb & 0xFF) / 255.0
-
-        self.init(red: r, green: g, blue: b)
-    }
-}
-
-#Preview {
-    LoginView(isLoggedIn: .constant(false))
 }

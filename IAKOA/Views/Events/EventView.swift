@@ -1,23 +1,27 @@
-
 import SwiftUI
 import CoreLocation
 import FirebaseFirestore
 import Firebase
 
 struct EventView: View {
-    @StateObject private var viewModel = EventViewModel()
+    @State private var events: [Event] = []
     @State private var selectedEvent: Event? = nil
+    @State private var errorMessage: String? = nil
 
     let columns = [
         GridItem(.flexible()),
         GridItem(.flexible())
     ]
-    
 
     var body: some View {
         ScrollView {
+            if let errorMessage = errorMessage {
+                Text("Erreur : \(errorMessage)")
+                    .foregroundColor(.red)
+                    .padding()
+            }
             LazyVGrid(columns: columns, spacing: 16) {
-                ForEach(viewModel.events) { event in
+                ForEach(events) { event in
                     VStack(alignment: .leading, spacing: 8) {
                         Text(event.name)
                             .font(.headline)
@@ -47,10 +51,10 @@ struct EventView: View {
             .padding()
         }
         .refreshable {
-            viewModel.fetchEvents()
+            fetchEvents()
         }
         .onAppear {
-            viewModel.fetchEvents()
+            fetchEvents()
         }
         .fullScreenCover(item: $selectedEvent) { event in
             EventDetailView(event: event) {
@@ -58,8 +62,18 @@ struct EventView: View {
             }
         }
     }
-}
 
-#Preview ("iPhone SE"){
-    EventView()
+    private func fetchEvents() {
+        EventServices.fetchEvents { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let fetchedEvents):
+                    self.events = fetchedEvents
+                    self.errorMessage = nil
+                case .failure(let error):
+                    self.errorMessage = error.localizedDescription
+                }
+            }
+        }
+    }
 }

@@ -1,4 +1,3 @@
-
 import Foundation
 import CoreLocation
 import FirebaseFirestore
@@ -16,7 +15,36 @@ struct Event: Identifiable, Equatable {
     var websiteLink: String
     var xLink: String
     var youtubeLink: String
-
+    var imagesLinks: [String] = []
+    
+    init(id: String,
+         creatorID: String,
+         date: Date,
+         description: String,
+         facebookLink: String,
+         instagramLink: String,
+         location: CLLocationCoordinate2D,
+         name: String,
+         pricing: Double,
+         websiteLink: String,
+         xLink: String,
+         youtubeLink: String,
+         imagesLinks: [String] = []) {
+        self.id = id
+        self.creatorID = creatorID
+        self.date = date
+        self.description = description
+        self.facebookLink = facebookLink
+        self.instagramLink = instagramLink
+        self.location = location
+        self.name = name
+        self.pricing = pricing
+        self.websiteLink = websiteLink
+        self.xLink = xLink
+        self.youtubeLink = youtubeLink
+        self.imagesLinks = imagesLinks
+    }
+    
     init?(document: DocumentSnapshot) {
         let data = document.data()
         guard
@@ -30,11 +58,12 @@ struct Event: Identifiable, Equatable {
             let pricing = data?["pricing"] as? Double,
             let websiteLink = data?["websiteLink"] as? String,
             let xLink = data?["xLink"] as? String,
-            let youtubeLink = data?["youtubeLink"] as? String
+            let youtubeLink = data?["youtubeLink"] as? String,
+            let imagesLinks = data?["imagesLinks"] as? [String]
         else {
             return nil
         }
-
+        
         self.id = document.documentID
         self.creatorID = creatorID
         self.date = timestamp.dateValue()
@@ -47,8 +76,26 @@ struct Event: Identifiable, Equatable {
         self.websiteLink = websiteLink
         self.xLink = xLink
         self.youtubeLink = youtubeLink
+        self.imagesLinks = imagesLinks
     }
-
+    
+    func toDictionary() -> [String: Any] {
+        return [
+            "creatorID": creatorID,
+            "date": Timestamp(date: date),
+            "description": description,
+            "facebookLink": facebookLink,
+            "instagramLink": instagramLink,
+            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
+            "name": name,
+            "pricing": pricing,
+            "websiteLink": websiteLink,
+            "xLink": xLink,
+            "youtubeLink": youtubeLink,
+            "imagesLinks": imagesLinks
+        ]
+    }
+    
     static func == (lhs: Event, rhs: Event) -> Bool {
         lhs.id == rhs.id
     }

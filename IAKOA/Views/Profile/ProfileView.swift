@@ -229,8 +229,8 @@ struct ProfileView: View {
             }
         }
     }
-
 }
+
 struct LongPressLogoutButton: View {
     @State private var progress: CGFloat = 0.0
     @State private var isPressing = false
@@ -264,6 +264,7 @@ struct LongPressLogoutButton: View {
                 .foregroundColor(progress > 0.5 ? .white : .red)
             
             
+            
         }
         .gesture(
             DragGesture(minimumDistance: 0)
@@ -276,7 +277,18 @@ struct LongPressLogoutButton: View {
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                             if isPressing {
-                                logout()
+                                AuthServices.logout { result in
+                                    DispatchQueue.main.async {
+                                        switch result {
+                                        case .success:
+                                            alertText = "Déconnexion réussie."
+                                            onLogoutConfirmed()
+                                        case .failure(let error):
+                                            alertText = "Erreur lors de la déconnexion : \(error.localizedDescription)"
+                                        }
+                                        showAlert = true
+                                    }
+                                }
                             }
                         }
                     }
@@ -288,18 +300,6 @@ struct LongPressLogoutButton: View {
                     }
                 }
         )
-    }
-
-    func logout() {
-        do {
-            try Auth.auth().signOut()
-            alertText = "Déconnexion réussie."
-            showAlert = true
-            onLogoutConfirmed()
-        } catch {
-            alertText = "Erreur lors de la déconnexion : \(error.localizedDescription)"
-            showAlert = true
-        }
     }
 }
 
@@ -350,7 +350,18 @@ struct LongPressDeleteAccountButton: View {
                         }
                         DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
                             if isPressing {
-                                deleteAccount()
+                                UserServices.deleteAccount { result in
+                                    DispatchQueue.main.async {
+                                        switch result {
+                                        case .success:
+                                            alertText = "Compte et données supprimés avec succès."
+                                            onDeleteConfirmed()
+                                        case .failure(let error):
+                                            alertText = "Erreur lors de la suppression : \(error.localizedDescription)"
+                                        }
+                                        showAlert = true
+                                    }
+                                }
                             }
                         }
                     }
@@ -360,35 +371,7 @@ struct LongPressDeleteAccountButton: View {
                     withAnimation(.easeOut(duration: 0.3)) {
                         progress = 0.0
                     }
-                }
-        )
-    }
-
-    func deleteAccount() {
-        guard let user = Auth.auth().currentUser else {
-            alertText = "Aucun utilisateur connecté."
-            showAlert = true
-            return
-        }
-
-        let uid = user.uid
-        user.delete { error in
-            if let error = error {
-                alertText = "Erreur lors de la suppression : \(error.localizedDescription)"
-                showAlert = true
-            } else {
-                // Delete Firestore user document
-                let db = Firestore.firestore()
-                db.collection("users").document(uid).delete { dbError in
-                    if let dbError = dbError {
-                        alertText = "Compte supprimé, mais erreur lors de la suppression des données : \(dbError.localizedDescription)"
-                    } else {
-                        alertText = "Compte et données supprimés avec succès."
-                        onDeleteConfirmed()
-                    }
-                    showAlert = true
-                }
             }
-        }
+        )
     }
 }

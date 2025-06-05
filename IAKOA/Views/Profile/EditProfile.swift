@@ -1,6 +1,5 @@
 import SwiftUI
 import FirebaseAuth
-import FirebaseFirestore
 
 struct EditProfileView: View {
     @Environment(\.dismiss) var dismiss
@@ -26,11 +25,11 @@ struct EditProfileView: View {
                 }
 
                 Section(header: Text("Pseudos de vos Réseaux sociaux (facultatif)")) {
-                    socialField(label: "Facebook", text: $facebookLink)
-                    socialField(label: "Instagram", text: $instagramLink)
-                    socialField(label: "YouTube", text: $youtubeLink)
-                    socialField(label: "X (Twitter)", text: $xLink)
-                    socialField(label: "Votre site", text: $website)
+                    Tools.socialField(label: "Facebook", text: $facebookLink)
+                    Tools.socialField(label: "Instagram", text: $instagramLink)
+                    Tools.socialField(label: "YouTube", text: $youtubeLink)
+                    Tools.socialField(label: "X (Twitter)", text: $xLink)
+                    Tools.socialField(label: "Votre site", text: $website)
                 }
 
                 Section {
@@ -46,7 +45,38 @@ struct EditProfileView: View {
 
                 Section {
                     Button(isLoading ? "En cours..." : "Mettre à jour") {
-                        updateUserProfile()
+                        guard let uid = Auth.auth().currentUser?.uid else {
+                            message = "Utilisateur non connecté"
+                            return
+                        }
+                        if isCreator && name.trimmingCharacters(in: .whitespaces).isEmpty {
+                            message = "Le nom est obligatoire pour un compte créateur."
+                            return
+                        }
+                        message = ""
+                        isLoading = true
+                        let user = User(
+                            id: uid,
+                            name: name,
+                            email: email,
+                            facebookLink: facebookLink,
+                            instagramLink: instagramLink,
+                            xLink: xLink,
+                            youtubeLink: youtubeLink,
+                            website: website,
+                            isCreator: isCreator
+                        )
+                        UserServices.updateUserProfile(user: user) { result in
+                            DispatchQueue.main.async {
+                                isLoading = false
+                                switch result {
+                                case .success:
+                                    showSuccessAlert = true
+                                case .failure(let error):
+                                    message = "Erreur mise à jour: \(error.localizedDescription)"
+                                }
+                            }
+                        }
                     }
                     .disabled(isLoading)
                 }
@@ -60,7 +90,11 @@ struct EditProfileView: View {
                 }
             }
             .onAppear {
-                fetchIsCreator()
+                UserServices.fetchIsCreator { creator in
+                    if let creator = creator {
+                        isCreator = creator
+                    }
+                }
             }
             .alert(isPresented: $showSuccessAlert) {
                 Alert(
@@ -70,67 +104,6 @@ struct EditProfileView: View {
                         dismiss()
                     }
                 )
-            }
-        }
-    }
-
-    // MARK: - Affichage des champs de réseaux sociaux
-    func socialField(label: String, text: Binding<String>) -> some View {
-        HStack {
-            Text("\(label) :")
-                .italic()
-                .foregroundColor(.gray)
-            TextField(label, text: text)
-                .autocapitalization(.none)
-                .disableAutocorrection(true)
-                .foregroundColor(.black)
-        }
-    }
-
-    // MARK: - Mise à jour profil
-    func updateUserProfile() {
-        guard let uid = Auth.auth().currentUser?.uid else {
-            message = "Utilisateur non connecté"
-            return
-        }
-
-        if isCreator && name.trimmingCharacters(in: .whitespaces).isEmpty {
-            message = "Le nom est obligatoire pour un compte créateur."
-            return
-        }
-
-        message = ""
-        isLoading = true
-
-        let db = Firestore.firestore()
-        let data: [String: Any] = [
-            "name": name,
-            "facebookLink": facebookLink,
-            "instagramLink": instagramLink,
-            "youtubeLink": youtubeLink,
-            "xLink": xLink,
-            "email": email,
-            "website": website,
-            "isCreator": isCreator
-        ]
-
-        db.collection("users").document(uid).setData(data, merge: true) { error in
-            isLoading = false
-            if let error = error {
-                message = "Erreur mise à jour: \(error.localizedDescription)"
-            } else {
-                showSuccessAlert = true
-            }
-        }
-    }
-
-    // MARK: - Charger si l'utilisateur est créateur
-    func fetchIsCreator() {
-        guard let uid = Auth.auth().currentUser?.uid else { return }
-
-        Firestore.firestore().collection("users").document(uid).getDocument { snapshot, error in
-            if let data = snapshot?.data(), let creator = data["isCreator"] as? Bool {
-                isCreator = creator
             }
         }
     }
