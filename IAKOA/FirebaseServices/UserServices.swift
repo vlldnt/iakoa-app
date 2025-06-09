@@ -23,6 +23,7 @@ struct UserServices {
             if let snapshot = snapshot, let user = User(document: snapshot) {
                 completion(user)
             } else {
+                print("Erreur lors de la récupération de l'utilisateur: \(error?.localizedDescription ?? "Erreur inconnue")")
                 completion(nil)
             }
         }

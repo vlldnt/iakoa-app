@@ -14,6 +14,8 @@ extension Color {
 
         self.init(red: r, green: g, blue: b)
     }
+    
+    static let blueIakoa = Color(hex: "#2397FF")
 }
 
 

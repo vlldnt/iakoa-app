@@ -13,13 +13,13 @@ struct AuthView: View {
                 .resizable()
                 .renderingMode(.template)
                 .frame(width: 280, height: 80)
-                .foregroundStyle(Color(hex: "#2397FF"))
+                .foregroundStyle(Color.blueIakoa)
 
             ZStack {
                 GeometryReader { geo in
                     let width = geo.size.width / 2
                     RoundedRectangle(cornerRadius: 25)
-                        .fill(Color(hex: "#2397FF"))
+                        .fill(Color.blueIakoa)
                         .frame(width: width, height: geo.size.height)
                         .offset(x: selectedTab == .login ? 0 : width)
                         .animation(.easeInOut(duration: 0.2), value: selectedTab)

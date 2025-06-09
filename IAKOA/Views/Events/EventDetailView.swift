@@ -1,10 +1,10 @@
 import SwiftUI
 import MapKit
+import UIKit
 
 struct EventDetailView: View {
     let event: Event
     let onClose: () -> Void
-    let imageNames = ["image-duck", "image"]
     
     @State private var showFullDescription = false
     @State private var isTextTruncated = false
@@ -69,7 +69,7 @@ struct EventDetailView: View {
                         Button(action: { onClose() }) {
                             Image(systemName: "chevron.backward")
                                 .font(.title2)
-                                .foregroundColor(Color(hex: "#2397FF"))
+                                .foregroundColor(Color.blueIakoa)
                         }
                         Spacer()
                     }
@@ -78,17 +78,48 @@ struct EventDetailView: View {
                 .padding(EdgeInsets(top: 5, leading: 20, bottom: 5, trailing: 20))
             }
             TabView {
-                ForEach(imageNames, id: \.self) { name in
-                    Image(name)
+                if event.imagesLinks.isEmpty {
+                    Image("playstore")
                         .resizable()
                         .aspectRatio(contentMode: .fill)
                         .frame(height: 270)
                         .frame(maxWidth: .infinity)
                         .clipped()
+                } else {
+                    ForEach(event.imagesLinks.prefix(3), id: \.self) { link in
+                        if let url = URL(string: link) {
+                            AsyncImage(url: url) { phase in
+                                switch phase {
+                                case .empty:
+                                    ProgressView()
+                                        .frame(height: 270)
+                                        .frame(maxWidth: .infinity)
+                                case .success(let image):
+                                    image
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(height: 270)
+                                        .frame(maxWidth: .infinity)
+                                        .clipped()
+                                case .failure:
+                                    Image(systemName: "photo")
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(height: 270)
+                                        .frame(maxWidth: .infinity)
+                                        .foregroundColor(.gray)
+                                @unknown default:
+                                    EmptyView()
+                                }
+                            }
+                        }
+                    }
                 }
             }
-                    .tabViewStyle(PageTabViewStyle())
-                    .frame(height: 270)
+            .tabViewStyle(PageTabViewStyle())
+            .frame(height: 270)
+            .tabViewStyle(PageTabViewStyle())
+            .frame(height: 270)
 
             VStack(spacing: 10) {
                 Text(event.name)
@@ -121,7 +152,7 @@ struct EventDetailView: View {
                                 .padding(.trailing, 8)
                         }
                     }
-                    .background(Color(hex: "#2397FF"))
+                    .background(Color.blueIakoa)
                     .cornerRadius(10)
                 }
                 .padding(.horizontal, 5)
@@ -161,7 +192,7 @@ struct EventDetailView: View {
                     Text(event.date.formatted(date: .abbreviated, time: .omitted))
                         .font(.system(size: 18))
                         .bold()
-                        .foregroundColor(Color(hex: "#2397FF"))
+                        .foregroundColor(Color.blueIakoa)
                     Text(status)
                         .font(.system(size: 12))
                         .foregroundColor(Color(.systemGray))
@@ -188,17 +219,45 @@ struct EventDetailView: View {
                     .foregroundColor(Color(.systemGray2))
                 HStack(spacing: 14) {
                     if !event.facebookLink.isEmpty {
-                        Image("facebook-icon").resizable().frame(width: 40, height: 40)
+                        Button {
+                            if let url = URL(string: "https://facebook.com/\(event.facebookLink)") {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Image("facebook-icon").resizable().frame(width: 40, height: 40)
+                        }
                     }
+
                     if !event.instagramLink.isEmpty {
-                        Image("instagram-icon").resizable().frame(width: 40, height: 40)
+                        Button {
+                            if let url = URL(string: "https://instagram.com/\(event.instagramLink)") {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Image("instagram-icon").resizable().frame(width: 40, height: 40)
+                        }
                     }
+
                     if !event.youtubeLink.isEmpty {
-                        Image("youtube-icon").resizable().frame(width: 40, height: 40)
+                        Button {
+                            if let url = URL(string: "https://youtube.com/@\(event.youtubeLink)") {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Image("youtube-icon").resizable().frame(width: 40, height: 40)
+                        }
                     }
+
                     if !event.xLink.isEmpty {
-                        Image("x-icon").resizable().frame(width: 40, height: 40)
+                        Button {
+                            if let url = URL(string: "https://x.com/\(event.xLink)") {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Image("x-icon").resizable().frame(width: 40, height: 40)
+                        }
                     }
+
                 }
             }
         }

@@ -1,3 +1,14 @@
+//
+//  AddressSearchService.swift
+//  IAKOA
+//
+//  Created by Adrien V on 06/06/2025.
+//
+import CoreLocation
+import MapKit
+import Foundation
+import SwiftUI
+
 class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
     @Published var searchResults: [MKLocalSearchCompletion] = []
     

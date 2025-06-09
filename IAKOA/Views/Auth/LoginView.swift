@@ -1,7 +1,11 @@
 import SwiftUI
 
 struct LoginView: View {
+    
     @Binding var isLoggedIn: Bool
+    
+    
+    @StateObject private var googleAuthManager = GoogleAuthManager.shared
 
     @State private var selectedTab: AuthTab = .login
     @State private var email: String = ""
@@ -53,7 +57,7 @@ struct LoginView: View {
             }) {
                 Text("Mot de passe oublié ?")
                     .font(.system(size: 12))
-                    .foregroundColor(Color(hex: "#2397FF"))
+                    .foregroundColor(Color.blueIakoa)
             }
             .padding(.top, 4)
 
@@ -75,57 +79,22 @@ struct LoginView: View {
                     .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color(hex: "#2397FF"))
+                    .background(Color.blueIakoa)
                     .cornerRadius(8)
             }
 
             HStack {
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(height: 1)
-
-                Text("ou continuer avec")
+                Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
+                Text("ou avec")
                     .foregroundColor(.gray)
                     .font(.system(size: 12))
-
-                Rectangle()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(height: 1)
+                Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
             }
+            
+            GoogleSignInButtonView(isLoggedIn: $isLoggedIn)
+            
+            // AppleSignInButtonView(isLoggedIn: $isLoggedIn)   ---> Besoin d'un accés Apple Developer pour l'utiliser
 
-            Button(action: {
-                // Continuer avec Apple
-            }) {
-                HStack(spacing: 12) {
-                    Image("apple-icon")
-                        .resizable()
-                        .frame(width: 35, height: 35)
-
-                    Text("Continuer avec Apple")
-                        .foregroundColor(.black)
-                }
-                .padding(7)
-                .frame(maxWidth: .infinity)
-                .background(Color(UIColor.systemGray4).opacity(0.8))
-                .cornerRadius(8)
-            }
-
-            Button(action: {
-                // Continuer avec Google
-            }) {
-                HStack(spacing: 12) {
-                    Image("google-icon")
-                        .resizable()
-                        .frame(width: 35, height: 35)
-
-                    Text("Continuer avec Google")
-                        .foregroundColor(.black)
-                }
-                .padding(7)
-                .frame(maxWidth: .infinity)
-                .background(Color(UIColor.systemGray4).opacity(0.8))
-                .cornerRadius(8)
-            }
         }
         .padding()
         .alert(isPresented: $showAlert) {

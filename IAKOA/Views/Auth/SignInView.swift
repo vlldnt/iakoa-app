@@ -91,57 +91,18 @@ struct SignInView: View {
                     .foregroundColor(.white)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(isFormValid ? Color(hex: "#2397FF") : Color.gray)
+                    .background(isFormValid ? Color.blueIakoa : Color.gray)
                     .cornerRadius(8)
             }
             .disabled(!isFormValid)
 
-            // Ligne de séparation
-            HStack {
-                Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
-                Text("ou créer avec")
-                    .foregroundColor(.gray)
-                    .font(.system(size: 12))
-                Rectangle().fill(Color.gray.opacity(0.3)).frame(height: 1)
-            }
-
-            // Boutons sociaux
-            HStack(spacing: 50) {
-                Button(action: {}) {
-                    Image("apple-icon")
-                        .resizable()
-                        .frame(width: 40, height: 40)
-                        .padding(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                }
-                Button(action: {}) {
-                    Image("google-icon")
-                        .resizable()
-                        .frame(width: 40, height: 40)
-                        .padding(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
-                }
-            }
-
-            VStack {
-                Text("Conditions d'utilisation.")
-                    .bold()
-                    .foregroundColor(.gray)
-                    .font(.custom("Poppins-Regular", size: 10))
-            }
         }
         .padding()
         .alert(isPresented: $showAlert) {
             Alert(
                 title: Text(alertTitle),
                 message: Text(alertMessage),
-                dismissButton: .default(Text("OK")) {
+                dismissButton: .default(Text("Ok")) {
                     if shouldLogInAfterAlert {
                         isLoggedIn = true
                     }

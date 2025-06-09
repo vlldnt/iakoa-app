@@ -10,37 +10,62 @@ struct ContentView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            EventView()
+            EventView(isLoggedIn: $isLoggedIn, isCreator: $isCreator)
                 .tabItem {
                     Image(systemName: "bubbles.and.sparkles")
                     Text("Évènements")
                 }
                 .tag(0)
-
-            Text("Favoris")
-                .tabItem {
-                    Image(systemName: "hand.thumbsup.fill")
-                    Text("Favoris")
+            
+            Group {
+                if isCreator {
+                    Text("Gestionnaire")
+                } else {
+                    if isLoggedIn {
+                        Text("Favoris")
+                    } else {
+                        Button("Veuillez vous connecter") {
+                            selectedTab = 3
+                        }
+                        .background(Color.gray.opacity(0.2))
+                    }
                 }
-                .tag(1)
-
-            if isCreator {
-                CreateEventView()
-                    .tabItem {
-                        Image(systemName: "plus.circle")
-                        Text("Créer")
-                    }
-                    .tag(2)
-            } else {
-                MapView()
-                    .tabItem {
-                        Image(systemName: "map")
-                        Text("Carte")
-                    }
-                    .tag(2)
             }
+            .tabItem {
+                if isCreator {
+                    Image(systemName: "pencil.and.outline")
+                    Text("Gestionnaire")
+                } else {
+                    if isLoggedIn {
+                        Image(systemName: "heart.fill")
+                        Text("Favoris")
+                    } else {
+                        Image(systemName: "hand.thumbsup.fill")
+                        Text("Favoris")
+                    }
+                }
+            }
+            .tag(1)
+        
 
-            // Affichage du profil ou de l'écran d'authentification
+            Group {
+                if isCreator {
+                    CreateView()
+                } else {
+                    MapView()
+                }
+            }
+            .tabItem {
+                if isCreator {
+                    Image(systemName: "plus")
+                    Text("Créer")
+                } else {
+                    Image(systemName: "map")
+                    Text("Carte")
+                }
+            }
+            .tag(2)
+
             Group {
                 if isLoggedIn {
                     ProfileView(isLoggedIn: $isLoggedIn, isCreator: $isCreator)
@@ -49,16 +74,16 @@ struct ContentView: View {
                 }
             }
             .tabItem {
-                Image(systemName: isLoggedIn ? "person.fill.checkmark" : "person.fill.xmark")
-                Text("Profil")
+                Image(systemName: isLoggedIn ? "person.fill.checkmark" : "key")
+                Text(isLoggedIn ? "Profil" : "Authentification")
             }
             .tag(3)
         }
         .onAppear {
             fetchUserState()
         }
-        .onChange(of: isLoggedIn) {
-            selectedTab = 3
+        .onChange(of: isLoggedIn) { _, _ in
+            selectedTab = 0
             fetchUserState()
         }
     }
@@ -79,6 +104,7 @@ struct ContentView: View {
             if let document = document, document.exists {
                 let data = document.data()
                 isCreator = data?["isCreator"] as? Bool ?? false
+                print("L'utilisateur est bien créateur : \(isCreator)")
             } else {
                 isCreator = false
                 print("Erreur de récupération Firestore : \(error?.localizedDescription ?? "Inconnu")")
@@ -86,6 +112,7 @@ struct ContentView: View {
         }
     }
 }
+
 
 #Preview {
     ContentView()

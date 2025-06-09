@@ -10,6 +10,10 @@
 		3F1680BE2DD12439009D938D /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 3F1680BD2DD12439009D938D /* FirebaseAuth */; };
 		3F1680C02DD12439009D938D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = 3F1680BF2DD12439009D938D /* FirebaseFirestore */; };
 		3F2CC0092DF09AC40013F5B9 /* Cloudinary in Frameworks */ = {isa = PBXBuildFile; productRef = 3F2CC0082DF09AC40013F5B9 /* Cloudinary */; };
+		3F8EB35D2DF6E4BE00B068A7 /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = 3F8EB35C2DF6E4BE00B068A7 /* GoogleSignIn */; };
+		3F8EB35F2DF6E4BE00B068A7 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3F8EB35E2DF6E4BE00B068A7 /* GoogleSignInSwift */; };
+		3FC1285B2DF2ED590061F003 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 3FC1285A2DF2ED590061F003 /* FirebaseStorage */; };
+		3FC1285D2DF2ED590061F003 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 3FC1285C2DF2ED590061F003 /* FirebaseStorageCombine-Community */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,9 +39,22 @@
 		3FC5EDCE2DBA7AC400679E4B /* IAKOAUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = IAKOAUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3FC128592DF2E3460061F003 /* Exceptions for "IAKOA" folder in "IAKOA" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3FC5EDB62DBA7AC300679E4B /* IAKOA */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3FC5EDB92DBA7AC300679E4B /* IAKOA */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3FC128592DF2E3460061F003 /* Exceptions for "IAKOA" folder in "IAKOA" target */,
+			);
 			path = IAKOA;
 			sourceTree = "<group>";
 		};
@@ -59,8 +76,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				3F1680BE2DD12439009D938D /* FirebaseAuth in Frameworks */,
+				3FC1285B2DF2ED590061F003 /* FirebaseStorage in Frameworks */,
+				3F8EB35F2DF6E4BE00B068A7 /* GoogleSignInSwift in Frameworks */,
+				3FC1285D2DF2ED590061F003 /* FirebaseStorageCombine-Community in Frameworks */,
 				3F1680C02DD12439009D938D /* FirebaseFirestore in Frameworks */,
 				3F2CC0092DF09AC40013F5B9 /* Cloudinary in Frameworks */,
+				3F8EB35D2DF6E4BE00B068A7 /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -81,12 +102,20 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3FAD3C4B2DF6EB420045F093 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		3FC5EDAE2DBA7AC300679E4B = {
 			isa = PBXGroup;
 			children = (
 				3FC5EDB92DBA7AC300679E4B /* IAKOA */,
 				3FC5EDC72DBA7AC400679E4B /* IAKOATests */,
 				3FC5EDD12DBA7AC400679E4B /* IAKOAUITests */,
+				3FAD3C4B2DF6EB420045F093 /* Frameworks */,
 				3FC5EDB82DBA7AC300679E4B /* Products */,
 			);
 			sourceTree = "<group>";
@@ -124,6 +153,10 @@
 				3F1680BD2DD12439009D938D /* FirebaseAuth */,
 				3F1680BF2DD12439009D938D /* FirebaseFirestore */,
 				3F2CC0082DF09AC40013F5B9 /* Cloudinary */,
+				3FC1285A2DF2ED590061F003 /* FirebaseStorage */,
+				3FC1285C2DF2ED590061F003 /* FirebaseStorageCombine-Community */,
+				3F8EB35C2DF6E4BE00B068A7 /* GoogleSignIn */,
+				3F8EB35E2DF6E4BE00B068A7 /* GoogleSignInSwift */,
 			);
 			productName = IAKOA;
 			productReference = 3FC5EDB72DBA7AC300679E4B /* IAKOA.app */;
@@ -210,6 +243,7 @@
 			packageReferences = (
 				3F1680BC2DD12439009D938D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				3F2CC0072DF09AC40013F5B9 /* XCRemoteSwiftPackageReference "cloudinary_ios" */,
+				3F8EB35B2DF6E4BE00B068A7 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3FC5EDB82DBA7AC300679E4B /* Products */;
@@ -409,18 +443,24 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = IAKOA/IAKOADebug.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = N6G3X4W5TX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = IAKOA/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = Yes;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nous avons besoin d'accéder à votre appareil photo pour prendre des photos.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Nous avons besoin d'accéder à votre localisation en tout temps pour fournir des fonctionnalités basées sur l'emplacement même lorsque l'application est en arrière-plan.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nous avons besoin d'accéder à votre localisation pour fournir des fonctionnalités basées sur l'emplacement.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Nous avons besoin d'accéder à vos photos pour les sélectionner et les utiliser dans l'application.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -428,6 +468,7 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = Oldtooth.IAKOA;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -439,18 +480,23 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = IAKOA/IAKOA.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = N6G3X4W5TX;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = IAKOA/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.entertainment";
-				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = Yes;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Nous avons besoin d'accéder à votre appareil photo pour prendre des photos.";
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "Nous avons besoin d'accéder à votre localisation en tout temps pour fournir des fonctionnalités basées sur l'emplacement même lorsque l'application est en arrière-plan.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Nous avons besoin d'accéder à votre localisation pour fournir des fonctionnalités basées sur l'emplacement.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Nous avons besoin d'accéder à vos photos pour les sélectionner et les utiliser dans l'application.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -590,6 +636,14 @@
 				minimumVersion = 5.1.0;
 			};
 		};
+		3F8EB35B2DF6E4BE00B068A7 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/google/GoogleSignIn-iOS";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 8.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -607,6 +661,26 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3F2CC0072DF09AC40013F5B9 /* XCRemoteSwiftPackageReference "cloudinary_ios" */;
 			productName = Cloudinary;
+		};
+		3F8EB35C2DF6E4BE00B068A7 /* GoogleSignIn */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F8EB35B2DF6E4BE00B068A7 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignIn;
+		};
+		3F8EB35E2DF6E4BE00B068A7 /* GoogleSignInSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F8EB35B2DF6E4BE00B068A7 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
+			productName = GoogleSignInSwift;
+		};
+		3FC1285A2DF2ED590061F003 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F1680BC2DD12439009D938D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
+		};
+		3FC1285C2DF2ED590061F003 /* FirebaseStorageCombine-Community */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3F1680BC2DD12439009D938D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = "FirebaseStorageCombine-Community";
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

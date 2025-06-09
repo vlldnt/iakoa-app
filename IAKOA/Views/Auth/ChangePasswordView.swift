@@ -59,7 +59,7 @@ struct ChangePasswordView: View {
                         .foregroundColor(.white)
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(isFormValid ? Color(hex: "#2397FF") : Color.gray)
+                        .background(isFormValid ? Color.blueIakoa : Color.gray)
                         .cornerRadius(8)
                 }
                 .disabled(!isFormValid)
