@@ -78,7 +78,3 @@ struct AuthView: View {
         }
     }
 }
-
-#Preview {
-    AuthView(isLoggedIn: .constant(false))
-}

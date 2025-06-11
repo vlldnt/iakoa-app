@@ -15,14 +15,14 @@ class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
 
 struct MapView: View {
     @StateObject private var locationManager = LocationManager()
-    @State private var cameraPosition = MapCameraPosition.automatic // Laisse l'utilisateur libre
+    @State private var cameraPosition = MapCameraPosition.automatic
 
     var body: some View {
         Map(position: $cameraPosition) {
-            UserAnnotation() // Affiche le point bleu de localisation
+            UserAnnotation()
         }
         .mapControls {
-            MapUserLocationButton() // Optionnel : bouton pour recadrer manuellement
+            MapUserLocationButton()
         }
     }
 }

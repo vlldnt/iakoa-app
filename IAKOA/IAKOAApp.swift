@@ -9,12 +9,17 @@ import SwiftUI
 import Firebase
 import FirebaseCore
 import GoogleSignIn
-
+import SDWebImage
+import SDWebImageWebPCoder
 
 class AppDelegate: NSObject, UIApplicationDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         FirebaseApp.configure()
+        
+        let webPCoder = SDImageWebPCoder.shared
+        SDImageCodersManager.shared.addCoder(webPCoder)
+        
         return true
     }
 
@@ -23,8 +28,6 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         return GIDSignIn.sharedInstance.handle(url)
     }
 }
-
-
 
 @main
 struct IAKOAApp: App {

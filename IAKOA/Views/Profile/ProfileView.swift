@@ -40,8 +40,7 @@ struct ProfileView: View {
                                 .bold()
                                 .foregroundColor(.black)
                         }
-
-                        // Badge créateur / standard
+                        
                         HStack {
                             Image(systemName: "person")
                                 .foregroundColor(isCreator ? .orange : .gray)
@@ -55,18 +54,22 @@ struct ProfileView: View {
                             socialLinkRow(icon: "facebook-icon", username: facebookLink, type: "facebook")
                                 .padding(.top, 10)
                         }
+                        
                         if !instagramLink.isEmpty {
                             socialLinkRow(icon: "instagram-icon", username: instagramLink, type: "instagram")
                                 .padding(.top, 10)
                         }
+                        
                         if !youtubeLink.isEmpty {
                             socialLinkRow(icon: "youtube-icon", username: youtubeLink, type: "youtube")
                                 .padding(.top, 10)
                         }
+                        
                         if !xLink.isEmpty {
                             socialLinkRow(icon: "x-icon", username: xLink, type: "x")
                                 .padding(.top, 10)
                         }
+                        
                         if !website.isEmpty {
                             socialLinkRow(icon: "website-icon", username: website, type: "website")
                                 .padding(.top, 10)
@@ -155,47 +158,13 @@ struct ProfileView: View {
                 .resizable()
                 .frame(width: 30, height: 30)
             Button(action: {
-                openSocialLink(username: username, type: type)
+                // Action if needed, e.g., open URL
             }) {
                 Text(username)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .foregroundColor(.blue)
             }
-        }
-    }
-
-    func openSocialLink(username: String, type: String) {
-        var appURL: URL?
-        var webURL: URL?
-
-        switch type {
-        case "facebook":
-            appURL = URL(string: "fb://profile/\(username)")
-            webURL = URL(string: "https://facebook.com/\(username)")
-        case "instagram":
-            appURL = URL(string: "instagram://user?username=\(username)")
-            webURL = URL(string: "https://instagram.com/\(username)")
-        case "youtube":
-            appURL = URL(string: "youtube://www.youtube.com/channel/\(username)")
-            webURL = URL(string: "https://youtube.com/\(username)")
-        case "x":
-            appURL = URL(string: "twitter://user?screen_name=\(username)")
-            webURL = URL(string: "https://x.com/\(username)")
-        case "website":
-            if let url = URL(string: username), UIApplication.shared.canOpenURL(url) {
-                webURL = url
-            } else if let url = URL(string: "https://\(username)"), UIApplication.shared.canOpenURL(url) {
-                webURL = url
-            }
-        default:
-            return
-        }
-
-        if let appURL = appURL, UIApplication.shared.canOpenURL(appURL) {
-            UIApplication.shared.open(appURL)
-        } else if let webURL = webURL {
-            UIApplication.shared.open(webURL)
         }
     }
 
@@ -320,16 +289,14 @@ struct LongPressDeleteAccountButton: View {
 
     var body: some View {
         ZStack {
-            // Bordure de fond (rouge clair)
             RoundedRectangle(cornerRadius: cornerRadius)
                 .stroke(Color.red.opacity(0.3), lineWidth: lineWidth)
                 .frame(width: width, height: height)
 
-            // Bordure animée (rouge foncé) qui se remplit progressivement
             RoundedRectangle(cornerRadius: cornerRadius)
                 .trim(from: 0, to: progress)
                 .stroke(Color.red, style: StrokeStyle(lineWidth: lineWidth, lineCap: .butt))
-                .rotationEffect(.degrees(0)) // Commence en haut
+                .rotationEffect(.degrees(0))
                 .frame(width: width, height: height)
                 .animation(.linear(duration: isPressing ? duration : 0.3), value: progress)
                 .allowsHitTesting(false)

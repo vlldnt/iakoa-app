@@ -220,8 +220,11 @@ struct EventDetailView: View {
                 HStack(spacing: 14) {
                     if !event.facebookLink.isEmpty {
                         Button {
-                            if let url = URL(string: "https://facebook.com/\(event.facebookLink)") {
-                                UIApplication.shared.open(url)
+                            if let appURL = URL(string: "fb://profile/\(event.facebookLink)"),
+                               UIApplication.shared.canOpenURL(appURL) {
+                                UIApplication.shared.open(appURL)
+                            } else if let webURL = URL(string: "https://facebook.com/\(event.facebookLink)") {
+                                UIApplication.shared.open(webURL)
                             }
                         } label: {
                             Image("facebook-icon").resizable().frame(width: 40, height: 40)
@@ -257,7 +260,6 @@ struct EventDetailView: View {
                             Image("x-icon").resizable().frame(width: 40, height: 40)
                         }
                     }
-
                 }
             }
         }

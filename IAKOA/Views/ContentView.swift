@@ -19,7 +19,7 @@ struct ContentView: View {
             
             Group {
                 if isCreator {
-                    Text("Gestionnaire")
+                    EventsManagerView()
                 } else {
                     if isLoggedIn {
                         Text("Favoris")
@@ -50,7 +50,7 @@ struct ContentView: View {
 
             Group {
                 if isCreator {
-                    CreateView()
+                    CreateView(selectedTab: $selectedTab)
                 } else {
                     MapView()
                 }
@@ -65,7 +65,7 @@ struct ContentView: View {
                 }
             }
             .tag(2)
-
+            
             Group {
                 if isLoggedIn {
                     ProfileView(isLoggedIn: $isLoggedIn, isCreator: $isCreator)
@@ -83,7 +83,7 @@ struct ContentView: View {
             fetchUserState()
         }
         .onChange(of: isLoggedIn) { _, _ in
-            selectedTab = 0
+            selectedTab = 2
             fetchUserState()
         }
     }

@@ -66,6 +66,7 @@ struct UserServices {
         }
     }
     
+    
     static func updateUserProfile(user: User, completion: @escaping (Result<Void, Error>) -> Void) {
             let db = Firestore.firestore()
             db.collection("users").document(user.id).setData(user.toDictonary(), merge: true) { error in

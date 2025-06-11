@@ -40,4 +40,29 @@ struct AuthServices {
             completion(.failure(error))
         }
     }
+    
+    static func updatePassword(oldPassword: String, newPassword: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let user = Auth.auth().currentUser,
+              let email = user.email else {
+            let error = NSError(domain: "FirebaseAuth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Utilisateur non connecté."])
+            completion(.failure(error))
+            return
+        }
+
+        let credential = EmailAuthProvider.credential(withEmail: email, password: oldPassword)
+
+        user.reauthenticate(with: credential) { _, error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                user.updatePassword(to: newPassword) { error in
+                    if let error = error {
+                        completion(.failure(error))
+                    } else {
+                        completion(.success(()))
+                    }
+                }
+            }
+        }
+    }
 }

@@ -14,6 +14,7 @@
 		3F8EB35F2DF6E4BE00B068A7 /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 3F8EB35E2DF6E4BE00B068A7 /* GoogleSignInSwift */; };
 		3FC1285B2DF2ED590061F003 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = 3FC1285A2DF2ED590061F003 /* FirebaseStorage */; };
 		3FC1285D2DF2ED590061F003 /* FirebaseStorageCombine-Community in Frameworks */ = {isa = PBXBuildFile; productRef = 3FC1285C2DF2ED590061F003 /* FirebaseStorageCombine-Community */; };
+		3FE72CCE2DF9B8D800922581 /* SDWebImageWebPCoder in Frameworks */ = {isa = PBXBuildFile; productRef = 3FE72CCD2DF9B8D800922581 /* SDWebImageWebPCoder */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -81,6 +82,7 @@
 				3FC1285D2DF2ED590061F003 /* FirebaseStorageCombine-Community in Frameworks */,
 				3F1680C02DD12439009D938D /* FirebaseFirestore in Frameworks */,
 				3F2CC0092DF09AC40013F5B9 /* Cloudinary in Frameworks */,
+				3FE72CCE2DF9B8D800922581 /* SDWebImageWebPCoder in Frameworks */,
 				3F8EB35D2DF6E4BE00B068A7 /* GoogleSignIn in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -157,6 +159,7 @@
 				3FC1285C2DF2ED590061F003 /* FirebaseStorageCombine-Community */,
 				3F8EB35C2DF6E4BE00B068A7 /* GoogleSignIn */,
 				3F8EB35E2DF6E4BE00B068A7 /* GoogleSignInSwift */,
+				3FE72CCD2DF9B8D800922581 /* SDWebImageWebPCoder */,
 			);
 			productName = IAKOA;
 			productReference = 3FC5EDB72DBA7AC300679E4B /* IAKOA.app */;
@@ -244,6 +247,7 @@
 				3F1680BC2DD12439009D938D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				3F2CC0072DF09AC40013F5B9 /* XCRemoteSwiftPackageReference "cloudinary_ios" */,
 				3F8EB35B2DF6E4BE00B068A7 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				3FE72CCC2DF9B8D800922581 /* XCRemoteSwiftPackageReference "SDWebImageWebPCoder" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 3FC5EDB82DBA7AC300679E4B /* Products */;
@@ -644,6 +648,14 @@
 				minimumVersion = 8.0.0;
 			};
 		};
+		3FE72CCC2DF9B8D800922581 /* XCRemoteSwiftPackageReference "SDWebImageWebPCoder" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SDWebImage/SDWebImageWebPCoder";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.14.6;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -681,6 +693,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 3F1680BC2DD12439009D938D /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = "FirebaseStorageCombine-Community";
+		};
+		3FE72CCD2DF9B8D800922581 /* SDWebImageWebPCoder */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 3FE72CCC2DF9B8D800922581 /* XCRemoteSwiftPackageReference "SDWebImageWebPCoder" */;
+			productName = SDWebImageWebPCoder;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

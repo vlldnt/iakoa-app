@@ -44,5 +44,11 @@
 	<string>iakoa-app-587e0</string>
 	<key>STORAGE_BUCKET</key>
 	<string>iakoa-app-587e0.appspot.com</string>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>youtube</string>
+		<string>fb</string>
+	</array>
+
 </dict>
 </plist>

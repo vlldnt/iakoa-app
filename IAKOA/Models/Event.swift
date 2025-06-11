@@ -17,6 +17,7 @@ struct Event: Identifiable, Equatable {
     var youtubeLink: String
     var imagesLinks: [String] = []
     var address: String = ""
+    var categories: [String] = []
     
     init(id: String,
          creatorID: String,
@@ -31,7 +32,8 @@ struct Event: Identifiable, Equatable {
          xLink: String,
          youtubeLink: String,
          imagesLinks: [String] = [],
-         address: String = "") {
+         address: String = "",
+         categories: [String] = []) {
         self.id = id
         self.creatorID = creatorID
         self.date = date
@@ -46,6 +48,7 @@ struct Event: Identifiable, Equatable {
         self.youtubeLink = youtubeLink
         self.imagesLinks = imagesLinks
         self.address = address
+        self.categories = categories
     }
     
     init?(document: DocumentSnapshot) {
@@ -63,7 +66,8 @@ struct Event: Identifiable, Equatable {
             let xLink = data?["xLink"] as? String,
             let youtubeLink = data?["youtubeLink"] as? String,
             let imagesLinks = data?["imagesLinks"] as? [String],
-            let address = data?["address"] as? String
+            let address = data?["address"] as? String,
+            let categories = data?["categories"] as? [String]
         else {
             return nil
         }
@@ -82,6 +86,7 @@ struct Event: Identifiable, Equatable {
         self.youtubeLink = youtubeLink
         self.imagesLinks = imagesLinks
         self.address = address
+        self.categories = categories
     }
     
     func toDictionary() -> [String: Any] {
@@ -98,7 +103,8 @@ struct Event: Identifiable, Equatable {
             "xLink": xLink,
             "youtubeLink": youtubeLink,
             "imagesLinks": imagesLinks,
-            "address": address
+            "address": address,
+            "categories": categories
         ]
     }
     
