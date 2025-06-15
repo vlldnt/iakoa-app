@@ -16,7 +16,7 @@ struct Event: Identifiable, Equatable {
     var xLink: String
     var youtubeLink: String
     var imagesLinks: [String] = []
-    var address: String = ""
+    var address: String
     var categories: [String] = []
     
     init(id: String,
@@ -32,7 +32,7 @@ struct Event: Identifiable, Equatable {
          xLink: String,
          youtubeLink: String,
          imagesLinks: [String] = [],
-         address: String = "",
+         address: String,
          categories: [String] = []) {
         self.id = id
         self.creatorID = creatorID
