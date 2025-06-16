@@ -5,7 +5,7 @@ import FirebaseFirestore
 struct Event: Identifiable, Equatable {
     var id: String
     var creatorID: String
-    var date: Date
+    var dates: [Date]
     var description: String
     var facebookLink: String
     var instagramLink: String
@@ -21,7 +21,7 @@ struct Event: Identifiable, Equatable {
     
     init(id: String,
          creatorID: String,
-         date: Date,
+         dates: [Date],
          description: String,
          facebookLink: String,
          instagramLink: String,
@@ -36,7 +36,7 @@ struct Event: Identifiable, Equatable {
          categories: [String] = []) {
         self.id = id
         self.creatorID = creatorID
-        self.date = date
+        self.dates = dates
         self.description = description
         self.facebookLink = facebookLink
         self.instagramLink = instagramLink
@@ -55,7 +55,7 @@ struct Event: Identifiable, Equatable {
         let data = document.data()
         guard
             let creatorID = data?["creatorID"] as? String,
-            let timestamp = data?["date"] as? Timestamp,
+            let timestamps = data?["dates"] as? [Timestamp],
             let description = data?["description"] as? String,
             let facebookLink = data?["facebookLink"] as? String,
             let instagramLink = data?["instagramLink"] as? String,
@@ -74,7 +74,7 @@ struct Event: Identifiable, Equatable {
         
         self.id = document.documentID
         self.creatorID = creatorID
-        self.date = timestamp.dateValue()
+        self.dates = timestamps.map { $0.dateValue() }
         self.description = description
         self.facebookLink = facebookLink
         self.instagramLink = instagramLink
@@ -92,7 +92,7 @@ struct Event: Identifiable, Equatable {
     func toDictionary() -> [String: Any] {
         return [
             "creatorID": creatorID,
-            "date": Timestamp(date: date),
+            "dates": dates.map { Timestamp(date: $0) },
             "description": description,
             "facebookLink": facebookLink,
             "instagramLink": instagramLink,

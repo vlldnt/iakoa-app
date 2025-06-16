@@ -12,7 +12,7 @@ struct ManagerEventCard: View {
                 .font(.subheadline)
                 .foregroundColor(.secondary)
 
-            Text("Date : \(formattedDate(event.date))")
+            Text(formattedDates(event.dates))
                 .font(.caption)
                 .foregroundColor(.gray)
         }
@@ -24,9 +24,24 @@ struct ManagerEventCard: View {
 
     private func formattedDate(_ date: Date) -> String {
         let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "fr_FR") // Pour français
+        formatter.locale = Locale(identifier: "fr_FR")
         formatter.dateStyle = .medium
         formatter.timeStyle = .short
         return formatter.string(from: date)
+    }
+
+    private func formattedDates(_ dates: [Date]) -> String {
+        switch dates.count {
+        case 0:
+            return "Date non définie"
+        case 1:
+            return "Date : \(formattedDate(dates[0]))"
+        case 2:
+            let start = formattedDate(dates[0])
+            let end = formattedDate(dates[1])
+            return "Du \(start) au \(end)"
+        default:
+            return "Dates multiples"
+        }
     }
 }
