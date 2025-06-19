@@ -1,10 +1,3 @@
-//
-//  IAKOAApp.swift
-//  IAKOA
-//
-//  Created by Adrien V on 24/04/2025.
-//
-
 import SwiftUI
 import Firebase
 import FirebaseCore

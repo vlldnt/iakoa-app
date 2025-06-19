@@ -1,9 +1,3 @@
-//
-//  AddressSearchService.swift
-//  IAKOA
-//
-//  Created by Adrien V on 06/06/2025.
-//
 import CoreLocation
 import MapKit
 import Foundation
@@ -20,7 +14,6 @@ class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompleterDe
         searchCompleter.delegate = self
         searchCompleter.resultTypes = .address
         
-        // Région centrée sur la France
         let franceCenter = CLLocationCoordinate2D(latitude: 46.603354, longitude: 1.888334)
         let franceSpan = MKCoordinateSpan(latitudeDelta: 7.0, longitudeDelta: 10.0)
         searchCompleter.region = MKCoordinateRegion(center: franceCenter, span: franceSpan)
@@ -32,7 +25,7 @@ class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompleterDe
     
     func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         DispatchQueue.main.async {
-            self.searchResults = completer.results
+            self.searchResults = Array(completer.results.prefix(5))
         }
     }
     
@@ -41,5 +34,28 @@ class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompleterDe
         DispatchQueue.main.async {
             self.searchResults = []
         }
+    }
+}
+
+struct AddressSuggestionRow: View {
+    let completion: MKLocalSearchCompletion
+    let onSelect: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(completion.title)
+                .fontWeight(.medium)
+            if !completion.subtitle.isEmpty {
+                Text(completion.subtitle)
+                    .font(.footnote)
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(8)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(height: 60)
+        .background(Color.white)
+        .onTapGesture { onSelect() }
+        Divider()
     }
 }

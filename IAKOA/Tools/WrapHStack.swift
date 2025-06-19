@@ -30,7 +30,6 @@ struct WrapHStack<Data: RandomAccessCollection, Content: View>: View where Data.
         }
     }
 
-    // Fonction utilitaire pour découper la liste en sous-listes de taille chunkSize
     private func chunk<T>(data: [T], chunkSize: Int) -> [[T]] {
         var chunks: [[T]] = []
         var currentChunk: [T] = []

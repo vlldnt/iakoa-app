@@ -11,10 +11,10 @@ struct Step1BasicInfo: View {
             Form {
                 Section(header: Text("Nom de l'événement")) {
                     ZStack(alignment: .trailing) {
-                        TextField("Nom (60 caractères maximum)", text: $eventName)
+                        TextField("Nom (70 caractères maximum)", text: $eventName)
                             .onChange(of: eventName) { _, newValue in
-                                if newValue.count > 60 {
-                                    eventName = String(newValue.prefix(60))
+                                if newValue.count > 70 {
+                                    eventName = String(newValue.prefix(70))
                                 }
                             }
                             .font(.system(size: 14))
@@ -35,15 +35,15 @@ struct Step1BasicInfo: View {
 
                 Section(header: Text("Catégories sélectionnées")) {
                     WrapHStack(data: eventCategories, spacing: 8) { category in
-                        let colorHex = eventCategoriesDict[category]?.color ?? "#999999"
+                        let colorHex = EventCategories.dict[category]?.color ?? "#999999"
                         let color = Color(hex: colorHex)
 
                         HStack(spacing: 10) {
-                            Image(systemName: eventCategoriesDict[category]?.icon ?? "questionmark")
+                            Image(systemName: EventCategories.dict[category]?.icon ?? "questionmark")
                                 .font(.system(size: 16))
                                 .foregroundColor(color)
 
-                            Text(eventCategoriesDict[category]?.label ?? category)
+                            Text(EventCategories.dict[category]?.label ?? category)
                                 .font(.system(size: 14))
                                 .foregroundColor(color)
 
@@ -66,7 +66,7 @@ struct Step1BasicInfo: View {
                 Section(header: Text("Ajouter une catégorie")) {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
-                            ForEach(eventCategoriesDict.sorted(by: { $0.value.label < $1.value.label }), id: \.key) { key, data in
+                            ForEach(EventCategories.dict.sorted(by: { $0.value.label < $1.value.label }), id: \.key) { key, data in
                                 let isSelected = eventCategories.contains(key)
                                 Button(action: {
                                     if !isSelected && eventCategories.count < 4 {

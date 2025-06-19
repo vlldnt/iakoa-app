@@ -9,7 +9,7 @@ struct Event: Identifiable, Equatable {
     var description: String
     var facebookLink: String
     var instagramLink: String
-    var location: CLLocationCoordinate2D
+    var location: CLLocationCoordinate2D?
     var name: String
     var pricing: Double
     var websiteLink: String
@@ -25,7 +25,7 @@ struct Event: Identifiable, Equatable {
          description: String,
          facebookLink: String,
          instagramLink: String,
-         location: CLLocationCoordinate2D,
+         location: CLLocationCoordinate2D?,
          name: String,
          pricing: Double,
          websiteLink: String,
@@ -59,7 +59,6 @@ struct Event: Identifiable, Equatable {
             let description = data?["description"] as? String,
             let facebookLink = data?["facebookLink"] as? String,
             let instagramLink = data?["instagramLink"] as? String,
-            let geoPoint = data?["location"] as? GeoPoint,
             let name = data?["name"] as? String,
             let pricing = data?["pricing"] as? Double,
             let websiteLink = data?["websiteLink"] as? String,
@@ -71,14 +70,18 @@ struct Event: Identifiable, Equatable {
         else {
             return nil
         }
-        
+
+
+        let geoPoint = data?["location"] as? GeoPoint
+        let location = geoPoint.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }
+
         self.id = document.documentID
         self.creatorID = creatorID
         self.dates = timestamps.map { $0.dateValue() }
         self.description = description
         self.facebookLink = facebookLink
         self.instagramLink = instagramLink
-        self.location = CLLocationCoordinate2D(latitude: geoPoint.latitude, longitude: geoPoint.longitude)
+        self.location = location
         self.name = name
         self.pricing = pricing
         self.websiteLink = websiteLink
@@ -90,13 +93,12 @@ struct Event: Identifiable, Equatable {
     }
     
     func toDictionary() -> [String: Any] {
-        return [
+        var dict: [String: Any] = [
             "creatorID": creatorID,
             "dates": dates.map { Timestamp(date: $0) },
             "description": description,
             "facebookLink": facebookLink,
             "instagramLink": instagramLink,
-            "location": GeoPoint(latitude: location.latitude, longitude: location.longitude),
             "name": name,
             "pricing": pricing,
             "websiteLink": websiteLink,
@@ -106,6 +108,10 @@ struct Event: Identifiable, Equatable {
             "address": address,
             "categories": categories
         ]
+        if let loc = location {
+            dict["location"] = GeoPoint(latitude: loc.latitude, longitude: loc.longitude)
+        }
+        return dict
     }
     
     static func == (lhs: Event, rhs: Event) -> Bool {

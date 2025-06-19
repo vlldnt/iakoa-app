@@ -9,259 +9,382 @@ struct EventDetailView: View {
     @State private var showFullDescription = false
     @State private var isTextTruncated = false
     @State private var cameraPosition: MapCameraPosition
+    @State private var creatorName: String = ""
+    @State private var creatorWebsite: String = ""
+    @State private var selectedImageURL: URL? = nil
+    @State private var showFullScreen = false
     
+    @State private var imageSizes: [String: CGSize] = [:]
+
     init(event: Event, onClose: @escaping () -> Void) {
         self.event = event
         self.onClose = onClose
-        let coordinate = CLLocationCoordinate2D(latitude: event.location.latitude, longitude: event.location.longitude)
-        _cameraPosition = State(initialValue: .region(MKCoordinateRegion(
-            center: coordinate,
-            span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
-        )))
-    }
-    
-    var status: String {
-        let now = Date()
-        let target = event.date
-        let calendar = Calendar.current
         
-        guard let daysRemaining = calendar.dateComponents([.day], from: now, to: target).day else {
-            return ""
+        if let location = event.location {
+            let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+            _cameraPosition = State(initialValue: .region(MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
+            )))
+        } else {
+            // Valeur par défaut si pas de coordonnée : centre monde ou autre
+            _cameraPosition = State(initialValue: .region(MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
+                span: MKCoordinateSpan(latitudeDelta: 180, longitudeDelta: 360)
+            )))
         }
-        
-        if daysRemaining < 0 {
-            return "(Évènement passé)"
-        } else if daysRemaining == 0 {
-            return "(Aujourd'hui)"
-        } else if daysRemaining == 1 {
-            return "(Demain)"
-        }
-        
-        // Calcul des mois et semaines
-        let months = daysRemaining / 30
-        let weeks = (daysRemaining % 30) / 7
-        let days = (daysRemaining % 30) % 7
-        
-        var parts: [String] = []
-        
-        if months > 0 {
-            parts.append("\(months) mois")
-        }
-        if weeks > 0 {
-            parts.append("\(weeks) semaine\(weeks > 1 ? "s" : "")")
-        }
-        if days > 0 {
-            parts.append("\(days) jour\(days > 1 ? "s" : "")")
-        }
-        
-        return "(dans \(parts.joined(separator: ", ")))"
     }
     
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ZStack {
-                    Image("playstore")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(height: 55)
-                    HStack {
-                        Button(action: { onClose() }) {
-                            Image(systemName: "chevron.backward")
-                                .font(.title2)
-                                .foregroundColor(Color.blueIakoa)
+        ZStack {
+            ScrollView {
+                VStack(spacing: 0) {
+                    ZStack {
+                        Image("playstore")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(height: 55)
+                        HStack {
+                            Button(action: { onClose() }) {
+                                Image(systemName: "chevron.backward")
+                                    .font(.title2)
+                                    .foregroundColor(Color.blueIakoa)
+                            }
+                            Spacer()
                         }
-                        Spacer()
                     }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(EdgeInsets(top: 5, leading: 20, bottom: 5, trailing: 20))
-            }
-            TabView {
-                if event.imagesLinks.isEmpty {
-                    Image("playstore")
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(height: 270)
-                        .frame(maxWidth: .infinity)
-                        .clipped()
-                } else {
-                    ForEach(event.imagesLinks.prefix(3), id: \.self) { link in
-                        if let url = URL(string: link) {
-                            AsyncImage(url: url) { phase in
-                                switch phase {
-                                case .empty:
-                                    ProgressView()
-                                        .frame(height: 270)
-                                        .frame(maxWidth: .infinity)
-                                case .success(let image):
-                                    image
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 5)
+                    
+                    TabView {
+                        if event.imagesLinks.isEmpty {
+                            Image("playstore")
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(height: 270)
+                                .frame(maxWidth: .infinity)
+                                .clipped()
+                        } else {
+                            ForEach(event.imagesLinks.prefix(3), id: \.self) { link in
+                                if let url = URL(string: link) {
+                                    GeometryReader { geo in
+                                        AsyncImage(url: url) { phase in
+                                            switch phase {
+                                            case .empty:
+                                                ProgressView()
+                                                    .frame(maxWidth: .infinity)
+                                                    .frame(height: 270)
+                                            case .success(let image):
+                                                image
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(width: geo.size.width)
+                                                    .onAppear {
+                                                        if imageSizes[link] == nil {
+                                                            if let uiImage = image.asUIImage() {
+                                                                imageSizes[link] = uiImage.size
+                                                            }
+                                                        }
+                                                    }
+                                                    .onTapGesture {
+                                                        selectedImageURL = url
+                                                        showFullScreen = true
+                                                    }
+
+                                            case .failure:
+                                                Image(systemName: "photo")
+                                                    .resizable()
+                                                    .aspectRatio(contentMode: .fit)
+                                                    .frame(maxWidth: .infinity)
+                                                    .foregroundColor(.gray)
+                                            @unknown default:
+                                                EmptyView()
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .tabViewStyle(PageTabViewStyle())
+                    .frame(height: 300)
+                    
+                    VStack(spacing: 10) {
+                        Text(event.name)
+                            .font(.system(size: 22))
+                            .bold()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .lineLimit(2)
+                            .padding(.horizontal, 10)
+                        
+                        HStack {
+                            Text("Description:")
+                                .font(.system(size: 14))
+                                .bold()
+                                .italic()
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                            
+                            Button(action: {
+                                if let url = URL(string: event.websiteLink) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                HStack(spacing: 2) {
+                                    Image("website-icon")
                                         .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(height: 270)
-                                        .frame(maxWidth: .infinity)
-                                        .clipped()
-                                case .failure:
-                                    Image(systemName: "photo")
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fit)
-                                        .frame(height: 270)
-                                        .frame(maxWidth: .infinity)
-                                        .foregroundColor(.gray)
-                                @unknown default:
-                                    EmptyView()
+                                        .renderingMode(.template)
+                                        .foregroundColor(.white)
+                                        .frame(width: 20, height: 20)
+                                        .padding(8)
+                                    Text("Lien site web")
+                                        .font(.system(size: 14, weight: .bold))
+                                        .foregroundColor(.white)
+                                        .padding(.trailing, 8)
+                                }
+                            }
+                            .background(Color.blueIakoa)
+                            .cornerRadius(10)
+                            .padding(10)
+                        }
+                        .padding(.horizontal, 5)
+                        
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(event.description)
+                                .font(.body)
+                                .foregroundColor(Color(UIColor.systemGray))
+                                .lineLimit(showFullDescription ? nil : 4)
+                                .background(
+                                    Text(event.description)
+                                        .font(.body)
+                                        .lineLimit(6)
+                                        .background(GeometryReader { geometry in
+                                            Color.clear.onAppear {
+                                                let text = event.description
+                                                let textHeight = text.height(withConstrainedWidth: geometry.size.width, font: UIFont.preferredFont(forTextStyle: .body))
+                                                let lineHeight = UIFont.preferredFont(forTextStyle: .body).lineHeight
+                                                isTextTruncated = textHeight > (lineHeight * 4)
+                                            }
+                                        })
+                                        .hidden()
+                                )
+                            if isTextTruncated {
+                                Button(showFullDescription ? "Voir moins" : "Voir plus...") {
+                                    showFullDescription.toggle()
+                                }
+                                .font(.caption)
+                                .foregroundColor(Color.blue)
+                            }
+                        }
+                        .padding(.horizontal, 5)
+                        
+                        HStack {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(DateUtils.formattedDates(event.dates))
+                                    .font(.system(size: 14))
+                                    .bold()
+                                    .foregroundColor(Color.blueIakoa)
+                                Text(EventStatusUtils.eventStatus(from: event.dates))
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Color(.systemGray))
+                                    .italic()
+                            }
+                            
+                            Spacer()
+                            
+                            Text(event.pricing == 0 ? "Gratuit" : "à partir de \(Int(event.pricing)) €")
+                                .font(.headline)
+                        }
+                        .padding(.horizontal, 5)
+                    }
+                    
+                    Map(position: $cameraPosition) {
+                        if let location = event.location {
+                            Marker(event.name, coordinate: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude))
+                        }
+                    }
+                    .cornerRadius(12)
+                    .frame(height: 300)
+                    
+                    VStack {
+                        HStack(spacing: 4) {
+                            Text("Organisé par:")
+                                .font(.subheadline)
+                                .foregroundColor(Color(.systemGray2))
+
+                            Button(action: {
+                                if let url = URL(string: creatorWebsite) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text(creatorName)
+                                    .font(.subheadline)
+                                    .foregroundColor(Color.blueIakoa)
+                                    .italic()
+                            }
+                        }
+                        
+                        HStack(spacing: 14) {
+                            if !event.facebookLink.isEmpty {
+                                Button {
+                                    if let appURL = URL(string: "fb://profile/\(event.facebookLink)"),
+                                       UIApplication.shared.canOpenURL(appURL) {
+                                        UIApplication.shared.open(appURL)
+                                    } else if let webURL = URL(string: "https://facebook.com/\(event.facebookLink)") {
+                                        UIApplication.shared.open(webURL)
+                                    }
+                                } label: {
+                                    Image("facebook-icon").resizable().frame(width: 40, height: 40)
+                                }
+                            }
+                            
+                            if !event.instagramLink.isEmpty {
+                                Button {
+                                    if let url = URL(string: "https://instagram.com/\(event.instagramLink)") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                } label: {
+                                    Image("instagram-icon").resizable().frame(width: 40, height: 40)
+                                }
+                            }
+                            
+                            if !event.youtubeLink.isEmpty {
+                                Button {
+                                    if let url = URL(string: "https://youtube.com/@\(event.youtubeLink)") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                } label: {
+                                    Image("youtube-icon").resizable().frame(width: 40, height: 40)
+                                }
+                            }
+                            
+                            if !event.xLink.isEmpty {
+                                Button {
+                                    if let url = URL(string: "https://x.com/\(event.xLink)") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                } label: {
+                                    Image("x-icon").resizable().frame(width: 40, height: 40)
                                 }
                             }
                         }
                     }
                 }
+                .onAppear {
+                    fetchCreatorName()
+                }
             }
-            .tabViewStyle(PageTabViewStyle())
-            .frame(height: 270)
-            .tabViewStyle(PageTabViewStyle())
-            .frame(height: 270)
-
-            VStack(spacing: 10) {
-                Text(event.name)
-                    .font(.system(size: 22))
-                    .bold()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineLimit(2)
-                    .padding(.horizontal, 10)
-
-                HStack {
-                    Text("Description:")
-                        .font(.system(size: 14))
-                        .bold()
-                        .italic()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                    Button(action: {
-                        /* Action */
-                    }) {
-                        HStack(spacing: 2) {
-                            Image("website-icon")
-                                .resizable()
-                                .renderingMode(.template)
+            
+            // Fullscreen Image View avec zoom + bouton fermeture
+            if showFullScreen, let url = selectedImageURL {
+                ZStack {
+                    Color.black.opacity(0.95).ignoresSafeArea()
+                    
+                    AsyncImage(url: url) { phase in
+                        switch phase {
+                        case .empty:
+                            ProgressView()
+                        case .success(let image):
+                            ZoomableImage(image: image)
+                        case .failure:
+                            Image(systemName: "xmark.octagon")
                                 .foregroundColor(.white)
-                                .frame(width: 20, height: 20)
-                                .padding(8)
-                            Text("Lien site web")
-                                .font(.system(size: 14, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding(.trailing, 8)
+                                .font(.largeTitle)
+                        @unknown default:
+                            EmptyView()
                         }
                     }
-                    .background(Color.blueIakoa)
-                    .cornerRadius(10)
-                }
-                .padding(.horizontal, 5)
-
-
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(event.description)
-                        .font(.body)
-                        .foregroundColor(Color(UIColor.systemGray))
-                        .lineLimit(showFullDescription ? nil : 4)
-                        .background(
-                            Text(event.description)
-                                .font(.body)
-                                .lineLimit(6)
-                                .background(GeometryReader { geometry in
-                                    Color.clear.onAppear {
-                                        let text = event.description
-                                        let textHeight = text.height(withConstrainedWidth: geometry.size.width, font: UIFont.preferredFont(forTextStyle: .body))
-                                        let lineHeight = UIFont.preferredFont(forTextStyle: .body).lineHeight
-                                        isTextTruncated = textHeight > (lineHeight * 4)
-                                    }
-                                })
-                                .hidden()
-                        )
-                    if isTextTruncated {
-                        Button(showFullDescription ? "Voir moins" : "Voir plus...") {
-                            showFullDescription.toggle()
+                    
+                    // Bouton fermeture (croix)
+                    VStack {
+                        HStack {
+                            Spacer()
+                            Button(action: {
+                                showFullScreen = false
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .resizable()
+                                    .frame(width: 35, height: 35)
+                                    .foregroundColor(.white)
+                                    .padding()
+                            }
                         }
-                        .font(.caption)
-                        .foregroundColor(Color.blue)
+                        Spacer()
                     }
                 }
-                .padding(.horizontal, 5)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-                HStack {
-                    Text(event.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.system(size: 18))
-                        .bold()
-                        .foregroundColor(Color.blueIakoa)
-                    Text(status)
-                        .font(.system(size: 12))
-                        .foregroundColor(Color(.systemGray))
-                        .lineLimit(1)
-                        .italic()
-                        .fixedSize(horizontal: true, vertical: false)
-                    Spacer()
-                    Text(event.pricing == 0 ? "Gratuit" : "\(Int(event.pricing)) €")
-                        .font(.headline)
-                }
-                .padding(.horizontal, 5)
-            }
-            Map(position: $cameraPosition) {
-                Marker(event.name, coordinate: CLLocationCoordinate2D(latitude: event.location.latitude, longitude: event.location.longitude))
-            }
-            .cornerRadius(12)
-            .frame(height: 300)
-            .frame(maxWidth: .infinity)
-
-
-            VStack {
-                Text("Organisé par: \(event.creatorID)")
-                    .font(.subheadline)
-                    .foregroundColor(Color(.systemGray2))
-                HStack(spacing: 14) {
-                    if !event.facebookLink.isEmpty {
-                        Button {
-                            if let appURL = URL(string: "fb://profile/\(event.facebookLink)"),
-                               UIApplication.shared.canOpenURL(appURL) {
-                                UIApplication.shared.open(appURL)
-                            } else if let webURL = URL(string: "https://facebook.com/\(event.facebookLink)") {
-                                UIApplication.shared.open(webURL)
-                            }
-                        } label: {
-                            Image("facebook-icon").resizable().frame(width: 40, height: 40)
-                        }
-                    }
-
-                    if !event.instagramLink.isEmpty {
-                        Button {
-                            if let url = URL(string: "https://instagram.com/\(event.instagramLink)") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            Image("instagram-icon").resizable().frame(width: 40, height: 40)
-                        }
-                    }
-
-                    if !event.youtubeLink.isEmpty {
-                        Button {
-                            if let url = URL(string: "https://youtube.com/@\(event.youtubeLink)") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            Image("youtube-icon").resizable().frame(width: 40, height: 40)
-                        }
-                    }
-
-                    if !event.xLink.isEmpty {
-                        Button {
-                            if let url = URL(string: "https://x.com/\(event.xLink)") {
-                                UIApplication.shared.open(url)
-                            }
-                        } label: {
-                            Image("x-icon").resizable().frame(width: 40, height: 40)
-                        }
-                    }
-                }
+                .transition(.opacity)
             }
         }
+    }
+
+    private func fetchCreatorName() {
+        UserServices.fetchUser(uid: event.creatorID) { user in
+            if let user = user {
+                self.creatorName = user.name
+                self.creatorWebsite = user.website
+            } else {
+                self.creatorName = "Utilisateur inconnu"
+                self.creatorWebsite = ""
+            }
+        }
+    }
+    
+    private func computedHeight(for link: String, containerWidth: CGFloat) -> CGFloat {
+        guard let size = imageSizes[link], size.width > 0 else {
+            return 270
+        }
+        let aspectRatio = size.height / size.width
+        return containerWidth * aspectRatio
+    }
+}
+
+extension Image {
+    func asUIImage() -> UIImage? {
+        let mirror = Mirror(reflecting: self)
+        for child in mirror.children {
+            if let uiImage = child.value as? UIImage {
+                return uiImage
+            }
+        }
+        return nil
+    }
+}
+
+struct ZoomableImage: View {
+    let image: Image
+    @State private var currentScale: CGFloat = 1.0
+    @State private var lastScale: CGFloat = 1.0
+    
+    @State private var offset: CGSize = .zero
+    @State private var lastOffset: CGSize = .zero
+
+    var body: some View {
+        image
+            .resizable()
+            .scaledToFit()
+            .scaleEffect(currentScale)
+            .offset(offset)
+            .gesture(
+                SimultaneousGesture(
+                    MagnificationGesture()
+                        .onChanged { value in
+                            currentScale = lastScale * value
+                        }
+                        .onEnded { _ in
+                            lastScale = currentScale
+                        },
+                    DragGesture()
+                        .onChanged { value in
+                            offset = CGSize(width: lastOffset.width + value.translation.width,
+                                            height: lastOffset.height + value.translation.height)
+                        }
+                        .onEnded { _ in
+                            lastOffset = offset
+                        }
+                )
+            )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(Color.black)
+            .edgesIgnoringSafeArea(.all)
     }
 }

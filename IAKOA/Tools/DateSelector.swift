@@ -4,16 +4,18 @@ struct SingleDatePickerView: View {
     @Binding var selectedDate: Date
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 4) {
             DatePicker("Date", selection: $selectedDate, displayedComponents: .date)
                 .datePickerStyle(GraphicalDatePickerStyle())
-                .font(.system(size: 14))
+                .font(.system(size: 12))
                 .environment(\.locale, Locale(identifier: "fr_FR"))
+                .frame(maxHeight: 280)
 
             Text("Date sélectionnée : \(formatted(selectedDate))")
-                .font(.subheadline)
+                .font(.caption)
                 .foregroundColor(.secondary)
         }
+        .padding(6)
     }
 
     private func formatted(_ date: Date) -> String {
@@ -31,61 +33,18 @@ struct DateRangeSelector: View {
     @State private var selectedDates: Set<DateComponents> = []
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Sélectionnez une période")
-                .font(.headline)
-
+        VStack(alignment: .leading, spacing: 6) {
             MultiDatePicker("", selection: Binding(get: {
                 selectedDates
             }, set: { newValue in
-                let dates = newValue.compactMap { Calendar.current.date(from: $0) }.sorted()
-
-                switch dates.count {
-                case 0:
-                    selectedDates.removeAll()
-                    startDate = Date()
-                    endDate = Date()
-
-                case 1:
-                    selectedDates = Set([Calendar.current.dateComponents([.year, .month, .day], from: dates[0])])
-                    startDate = dates[0]
-                    endDate = dates[0]
-
-                case 2:
-                    let start = dates.first!
-                    let end = dates.last!
-                    startDate = start
-                    endDate = end
-
-                    // Dates intermédiaires excluant start et end
-                    let intermediateDates = datesInRange(start: start, end: end)
-                        .filter { $0 != start && $0 != end }
-
-                    var newSelectedDates = Set(intermediateDates.map {
-                        Calendar.current.dateComponents([.year, .month, .day], from: $0)
-                    })
-
-                    // Insert start et end en dernier
-                    newSelectedDates.insert(Calendar.current.dateComponents([.year, .month, .day], from: start))
-                    newSelectedDates.insert(Calendar.current.dateComponents([.year, .month, .day], from: end))
-
-                    selectedDates = newSelectedDates
-
-                default:
-                    // 3ème clic ou plus : reset avec nouvelle date sélectionnée (la dernière)
-                    if let lastDate = dates.last {
-                        selectedDates = Set([Calendar.current.dateComponents([.year, .month, .day], from: lastDate)])
-                        startDate = lastDate
-                        endDate = lastDate
-                    }
-                }
+                handleDateSelection(newValue)
             }))
             .environment(\.calendar, Calendar.current)
             .environment(\.locale, Locale(identifier: "fr_FR"))
-            .frame(maxHeight: 400)
+            .frame(maxHeight: 280)
 
             Text("Du \(formatted(startDate)) au \(formatted(endDate))")
-                .font(.subheadline)
+                .font(.caption)
                 .foregroundColor(.secondary)
 
             HStack {
@@ -95,8 +54,50 @@ struct DateRangeSelector: View {
                     startDate = Date()
                     endDate = Date()
                 }
-                .font(.caption)
+                .font(.caption2)
                 .foregroundColor(.blue)
+            }
+        }
+        .padding(2)
+    }
+
+    private func handleDateSelection(_ newValue: Set<DateComponents>) {
+        let dates = newValue.compactMap { Calendar.current.date(from: $0) }.sorted()
+
+        switch dates.count {
+        case 0:
+            selectedDates.removeAll()
+            startDate = Date()
+            endDate = Date()
+
+        case 1:
+            selectedDates = Set([Calendar.current.dateComponents([.year, .month, .day], from: dates[0])])
+            startDate = dates[0]
+            endDate = dates[0]
+
+        case 2:
+            let start = dates.first!
+            let end = dates.last!
+            startDate = start
+            endDate = end
+
+            let intermediateDates = datesInRange(start: start, end: end)
+                .filter { $0 != start && $0 != end }
+
+            var newSelectedDates = Set(intermediateDates.map {
+                Calendar.current.dateComponents([.year, .month, .day], from: $0)
+            })
+
+            newSelectedDates.insert(Calendar.current.dateComponents([.year, .month, .day], from: start))
+            newSelectedDates.insert(Calendar.current.dateComponents([.year, .month, .day], from: end))
+
+            selectedDates = newSelectedDates
+
+        default:
+            if let lastDate = dates.last {
+                selectedDates = Set([Calendar.current.dateComponents([.year, .month, .day], from: lastDate)])
+                startDate = lastDate
+                endDate = lastDate
             }
         }
     }

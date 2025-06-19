@@ -83,7 +83,7 @@ struct ContentView: View {
             fetchUserState()
         }
         .onChange(of: isLoggedIn) { _, _ in
-            selectedTab = 2
+            selectedTab = 0
             fetchUserState()
         }
     }
@@ -104,7 +104,6 @@ struct ContentView: View {
             if let document = document, document.exists {
                 let data = document.data()
                 isCreator = data?["isCreator"] as? Bool ?? false
-                print("L'utilisateur est bien créateur : \(isCreator)")
             } else {
                 isCreator = false
                 print("Erreur de récupération Firestore : \(error?.localizedDescription ?? "Inconnu")")

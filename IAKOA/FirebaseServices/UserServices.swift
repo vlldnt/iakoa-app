@@ -1,10 +1,3 @@
-//
-//  File.swift
-//  IAKOA
-//
-//  Created by Adrien V on 04/06/2025.
-//
-
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
@@ -23,7 +16,6 @@ struct UserServices {
             if let snapshot = snapshot, let user = User(document: snapshot) {
                 completion(user)
             } else {
-                print("Erreur lors de la récupération de l'utilisateur: \(error?.localizedDescription ?? "Erreur inconnue")")
                 completion(nil)
             }
         }

@@ -36,24 +36,21 @@ struct User: Identifiable, Codable {
     }
     
     init?(document: DocumentSnapshot) {
-        guard let data = document.data(),
-              let name = data["name"] as? String,
-              let email = data["email"] as? String,
-              let isCreator = data["isCreator"] as? Bool
-        else {
+        guard let data = document.data() else {
+            print("Pas de données")
             return nil
         }
-        
         self.id = document.documentID
-        self.name = name
-        self.email = email
+        self.name = data["name"] as? String ?? "Nom inconnu"
+        self.email = data["email"] as? String ?? "Email inconnu"
         self.facebookLink = data["facebookLink"] as? String ?? ""
         self.instagramLink = data["instagramLink"] as? String ?? ""
         self.xLink = data["xLink"] as? String ?? ""
         self.youtubeLink = data["youtubeLink"] as? String ?? ""
         self.website = data["website"] as? String ?? ""
-        self.isCreator = isCreator
+        self.isCreator = data["isCreator"] as? Bool ?? false
     }
+
     
     // Method to convert User instance to a dictionary for Firestore
     func toDictonary() -> [String: Any] {
