@@ -1,166 +1,127 @@
-// SearchBarEvents.swift
 import SwiftUI
+import Combine
 import CoreLocation
-
-struct City: Identifiable, Hashable {
-    let id: String // code INSEE
-    let name: String
-    let postalCodes: [String]
-    let latitude: Double
-    let longitude: Double
-}
-
-class CitySearchViewModel: ObservableObject {
-    @Published var suggestions: [City] = []
-    @Published var isLoading = false
-
-    func searchCities(query: String) {
-        guard !query.isEmpty else {
-            suggestions = []
-            return
-        }
-        isLoading = true
-        let urlString = "https://geo.api.gouv.fr/communes?nom=\(query)&fields=nom,codesPostaux,code,centre&boost=population&limit=10"
-        guard let url = URL(string: urlString.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "") else { return }
-        URLSession.shared.dataTask(with: url) { data, _, _ in
-            DispatchQueue.main.async {
-                self.isLoading = false
-                guard let data = data else { return }
-                if let json = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
-                    self.suggestions = json.compactMap { dict in
-                        guard let code = dict["code"] as? String,
-                              let nom = dict["nom"] as? String,
-                              let codesPostaux = dict["codesPostaux"] as? [String],
-                              let centre = dict["centre"] as? [String: Any],
-                              let coordinates = centre["coordinates"] as? [Double],
-                              coordinates.count == 2
-                        else { return nil }
-                        return City(
-                            id: code,
-                            name: nom,
-                            postalCodes: codesPostaux,
-                            latitude: coordinates[1],
-                            longitude: coordinates[0]
-                        )
-                    }
-                }
-            }
-        }.resume()
-    }
-}
 
 struct SearchBarEvents: View {
     @Binding var searchText: String
     @Binding var searchCity: String
     @Binding var searchRadius: Double
     @Binding var selectedCategories: Set<String>
-    var onApply: (() -> Void)? = nil
+    let onApply: () -> Void
     let availableCategories: [(key: String, label: String, icon: String, color: String)]
+    @Binding var selectedCity: City?
 
-    @StateObject private var cityVM = CitySearchViewModel()
-    @State private var cityQuery: String = ""
-    @State private var selectedCity: City? = nil
+    @State private var citySuggestions: [City] = []
+    @State private var cancellable: AnyCancellable?
 
     var body: some View {
-        VStack(spacing: 12) {
-            // Recherche ville
-            VStack(alignment: .leading) {
-                TextField("Ville ou code postal", text: $cityQuery)
-                    .onChange(of: cityQuery) { _, newValue in
-                        cityVM.searchCities(query: newValue)
-                    }
-                    .textInputAutocapitalization(.words)
-                    .disableAutocorrection(true)
-                    .padding(8)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(8)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("Rayon :")
+                Slider(value: $searchRadius, in: 1...100, step: 1)
+                Text("\(Int(searchRadius)) km")
+            }
 
-                if !cityVM.suggestions.isEmpty {
-                    ScrollView {
-                        VStack(alignment: .leading, spacing: 0) {
-                            ForEach(cityVM.suggestions) { city in
+            VStack(alignment: .leading) {
+                Text("Ville :")
+                TextField("Entrez une ville", text: $searchCity)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: searchCity) { _, newValue in
+                        fetchCitySuggestions(query: newValue)
+                    }
+
+                if !citySuggestions.isEmpty {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        VStack(alignment: .leading) {
+                            ForEach(citySuggestions.prefix(4), id: \.self) { city in
                                 Button(action: {
+                                    searchCity = city.nom
                                     selectedCity = city
-                                    searchCity = city.name
-                                    cityQuery = city.name
-                                    cityVM.suggestions = []
+                                    citySuggestions = []
                                 }) {
                                     HStack {
-                                        Text(city.name)
+                                        Text(city.nom)
                                         Spacer()
-                                        Text(city.postalCodes.first ?? "")
+                                        Text("\(city.codesPostaux.first ?? "")")
                                             .foregroundColor(.secondary)
+                                            .font(.caption)
                                     }
-                                    .padding(.vertical, 6)
-                                    .padding(.horizontal, 8)
+                                    .padding(4)
                                 }
-                                .buttonStyle(.plain)
                             }
                         }
-                        .background(Color(.systemBackground))
-                        .cornerRadius(8)
-                        .shadow(radius: 2)
                     }
-                    .frame(maxHeight: 150)
+                    .frame(maxHeight: 100)
                 }
             }
 
-            // Filtres catégories
-            ScrollView {
-                VStack(alignment: .leading, spacing: 10) {
-                    ForEach(availableCategories, id: \.key) { category in
-                        let isSelected = selectedCategories.contains(category.key)
-                        Button(action: {
-                            if isSelected {
-                                selectedCategories.remove(category.key)
-                            } else {
-                                selectedCategories.insert(category.key)
-                            }
-                        }) {
-                            HStack {
-                                Image(systemName: category.icon)
-                                    .foregroundColor(isSelected ? .white : .primary)
-                                Text(category.label)
-                                    .foregroundColor(isSelected ? .white : .primary)
-                                Spacer()
-                                if isSelected {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.white)
+            VStack(alignment: .leading) {
+                Text("Catégories :")
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(availableCategories, id: \.key) { cat in
+                            Button(action: {
+                                if selectedCategories.contains(cat.key) {
+                                    selectedCategories.remove(cat.key)
+                                } else {
+                                    selectedCategories.insert(cat.key)
                                 }
+                            }) {
+                                HStack {
+                                    Image(systemName: cat.icon)
+                                    Text(cat.label)
+                                }
+                                .padding(6)
+                                .background(selectedCategories.contains(cat.key) ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
+                                .cornerRadius(8)
                             }
-                            .padding()
-                            .background(isSelected ? Color.blue : Color(.systemGray6))
-                            .cornerRadius(8)
                         }
-                        .buttonStyle(PlainButtonStyle())
                     }
                 }
-                .padding(.horizontal)
-            }
-            .frame(maxHeight: 300) // limite la hauteur si besoin
-
-
-
-            // Rayon
-            HStack {
-                Text("📍 Rayon : \(Int(searchRadius)) km")
-                    .font(.subheadline)
-                Slider(value: $searchRadius, in: 5...50, step: 5)
             }
 
-            // Bouton Appliquer
-            Button(action: {
-                onApply?()
-            }) {
-                Text("Appliquer les filtres")
-                    .bold()
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(12)
+            Button("Appliquer les filtres") {
+                onApply()
             }
+            .buttonStyle(.borderedProminent)
         }
         .padding(.horizontal)
     }
+
+    private func fetchCitySuggestions(query: String) {
+        guard query.count >= 2 else {
+            citySuggestions = []
+            return
+        }
+
+        let urlString = "https://geo.api.gouv.fr/communes?nom=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&fields=nom,codesPostaux,centre&boost=population&limit=10"
+
+        guard let url = URL(string: urlString) else { return }
+
+        cancellable?.cancel()
+        cancellable = URLSession.shared.dataTaskPublisher(for: url)
+            .map { $0.data }
+            .decode(type: [City].self, decoder: JSONDecoder())
+            .replaceError(with: [])
+            .receive(on: DispatchQueue.main)
+            .sink { cities in
+                self.citySuggestions = Array(cities.prefix(4))
+            }
+    }
+}
+
+// MARK: - Ville
+struct City: Codable, Hashable {
+    let nom: String
+    let codesPostaux: [String]
+    let centre: Coordinates
+
+    var coordinates: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: centre.coordinates[1], longitude: centre.coordinates[0])
+    }
+}
+
+struct Coordinates: Codable, Hashable {
+    let type: String
+    let coordinates: [Double]
 }

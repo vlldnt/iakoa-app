@@ -1,4 +1,4 @@
-// iakoa-app/IAKOA/Views/Events/EventsView.swift
+// EventsView.swift
 import SwiftUI
 import CoreLocation
 import FirebaseFirestore
@@ -22,6 +22,8 @@ struct EventView: View {
     @State private var isSearchExpanded = false
     @State private var selectedCity: City? = nil
 
+    @StateObject private var locationManager = LocationManagerTool()
+
     private var eventCategories: [(key: String, label: String, icon: String, color: String)] {
         EventCategories.dict.map { key, value in
             (key: key, label: value.label, icon: value.icon, color: value.color)
@@ -32,7 +34,6 @@ struct EventView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 8) {
-                // Barre de recherche + bouton filtre
                 HStack {
                     TextField("Rechercher un événement...", text: $searchText)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
@@ -53,52 +54,16 @@ struct EventView: View {
                 }
                 .padding(.horizontal)
 
-                // Filtres avancés affichés seulement si isSearchExpanded
                 if isSearchExpanded {
-                    VStack(alignment: .leading, spacing: 12) {
-                        // Rayon
-                        HStack {
-                            Text("Rayon :")
-                            Slider(value: $searchRadius, in: 1...100, step: 1)
-                            Text("\(Int(searchRadius)) km")
-                        }
-
-                        // Catégories
-                        Text("Catégories :")
-                            .font(.subheadline)
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack {
-                                ForEach(eventCategories, id: \.key) { cat in
-                                    Button(action: {
-                                        if selectedCategories.contains(cat.key) {
-                                            selectedCategories.remove(cat.key)
-                                        } else {
-                                            selectedCategories.insert(cat.key)
-                                        }
-                                    }) {
-                                        HStack {
-                                            Image(systemName: cat.icon)
-                                            Text(cat.label)
-                                        }
-                                        .padding(6)
-                                        .background(selectedCategories.contains(cat.key) ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
-                                        .cornerRadius(8)
-                                    }
-                                }
-                            }
-                        }
-
-                        // Gratuit seulement
-                        Toggle("Gratuit seulement", isOn: $showOnlyFreeEvents)
-
-                        // Bouton appliquer
-                        Button("Appliquer les filtres") {
-                            fetchEvents()
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .padding(.top, 4)
-                    }
-                    .padding(.horizontal)
+                    SearchBarEvents(
+                        searchText: $searchText,
+                        searchCity: $searchCity,
+                        searchRadius: $searchRadius,
+                        selectedCategories: $selectedCategories,
+                        onApply: fetchEvents,
+                        availableCategories: eventCategories,
+                        selectedCity: $selectedCity
+                    )
                 }
 
                 Group {
@@ -109,13 +74,13 @@ struct EventView: View {
                             .foregroundColor(.red)
                             .multilineTextAlignment(.center)
                             .padding()
-                    } else if filteredEvents.isEmpty {
+                    } else if events.isEmpty {
                         Text("Aucun événement trouvé.")
                             .foregroundColor(.secondary)
                     } else {
                         ScrollView {
                             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-                                ForEach(filteredEvents) { event in
+                                ForEach(events) { event in
                                     eventCard(event, isLoggedIn: isLoggedIn)
                                 }
                             }
@@ -145,7 +110,6 @@ struct EventView: View {
         }
     }
 
-    // MARK: - Carte d'événement
     private func eventCard(_ event: Event, isLoggedIn: Bool) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             ZStack(alignment: .topLeading) {
@@ -227,22 +191,11 @@ struct EventView: View {
         }
     }
 
-    // MARK: - Filtrage
-    private var filteredEvents: [Event] {
-        events.filter { event in
-            let matchesSearch = searchText.isEmpty || event.name.localizedCaseInsensitiveContains(searchText)
-            let matchesFree = !showOnlyFreeEvents || event.pricing == 0
-            return matchesSearch && matchesFree
-        }
-    }
-
-    // MARK: - Récupération des événements
     private func fetchEvents() {
         isLoading = true
+        errorMessage = nil
 
-        let coordinates: CLLocationCoordinate2D? = selectedCity.map {
-            CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
-        }
+        let coordinates = selectedCity?.coordinates ?? locationManager.userLocation
 
         EventServices.fetchEvents(
             searchText: searchText,
@@ -264,8 +217,6 @@ struct EventView: View {
         }
     }
 
-
-    // MARK: - Favoris
     private func toggleFavorite(_ event: Event) {
         if favoriteEventIDs.contains(event.id) {
             favoriteEventIDs.remove(event.id)
