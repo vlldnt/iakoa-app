@@ -1,19 +1,30 @@
 import SwiftUI
 
 struct EventsManagerView: View {
-
+    
     @State private var events: [Event] = []
     @State private var isLoading = false
     @State private var errorMessage: String?
+    @State private var showDeleteAlert = false
+    @State private var eventToDelete: Event?
+    @State private var selectedEvent: Event?
+    @State private var eventToEdit: Event?
 
     var body: some View {
         NavigationView {
             VStack {
-                Text("Mes Événements")
-                    .font(.largeTitle)
-                    .bold()
-                    .padding(.top)
-
+                HStack(spacing: 8) {
+                    Image("playstore")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(height: 40)
+                    
+                    Text("Mes Événements")
+                        .font(.largeTitle)
+                        .bold()
+                        .padding(.top)
+                }
+                
                 if isLoading {
                     ProgressView("Chargement…")
                         .padding()
@@ -28,21 +39,74 @@ struct EventsManagerView: View {
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 16) {
-                            ForEach(events, id: \.id) { event in
-                                ManagerEventCard(event: event)
+                            ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
+                                ManagerEventCard(
+                                    event: event,
+                                    isImageOnRight: index % 1 == 1,
+                                    onEdit: {
+                                        eventToEdit = event
+                                    },
+                                    onDelete: {
+                                        eventToDelete = event
+                                        showDeleteAlert = true
+                                    },
+                                    onTap: {
+                                        selectedEvent = event
+                                    }
+                                )
                             }
                         }
                         .padding()
                     }
+                    .refreshable {
+                        loadUserEvents()
+                    }
                 }
+            }
+            .alert(isPresented: $showDeleteAlert) {
+                Alert(
+                    title: Text(eventToDelete?.name ?? ""),
+                    message: Text("Confirmez-vous la suppression de cet événement ?\nToutes les informations associées seront définitivement perdues."),
+                    primaryButton: .destructive(Text("Supprimer")) {
+                        guard let event = eventToDelete else { return }
+                        EventServices.deleteEventIfOwner(event: event) { result in
+                            DispatchQueue.main.async {
+                                switch result {
+                                case .success():
+                                    if let index = events.firstIndex(where: { $0.id == event.id }) {
+                                        events.remove(at: index)
+                                    }
+                                case .failure(let error):
+                                    errorMessage = error.localizedDescription
+                                }
+                            }
+                        }
+                    },
+                    secondaryButton: .cancel(Text("Garder"))
+                )
             }
             .onAppear(perform: loadUserEvents)
             .navigationBarHidden(true)
+            .sheet(item: $selectedEvent) { event in
+                EventDetailView(event: event, onClose: { selectedEvent = nil })
+            }
+            .sheet(item: $eventToEdit) { event in
+                EventStepsUpdateView(
+                    onUpdate: { loadUserEvents() },
+                    eventToEdit: event
+                )
+            }
+            .onDisappear {
+                loadUserEvents()
+            }
         }
     }
-
+    
     private func loadUserEvents() {
         isLoading = true
+        events = []           // Vide la liste pour éviter d'afficher d'anciennes données
+        errorMessage = nil    // Réinitialise le message d'erreur
+
         EventServices.fetchEventsForCurrentUser { result in
             DispatchQueue.main.async {
                 isLoading = false

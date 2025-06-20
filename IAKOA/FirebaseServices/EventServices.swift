@@ -66,6 +66,21 @@ struct EventServices {
             }
         }
     }
+    
+    static func updateEvent(_ event: Event, completion: @escaping (Result<Void, Error>) -> Void) {
+        let db = Firestore.firestore()
+        var data = event.toDictionary()
+        data.removeValue(forKey: "id")
+        
+        db.collection("events").document(event.id).updateData(data) { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
+        }
+    }
+
 
     static func fetchEventsForCurrentUser(completion: @escaping (Result<[Event], Error>) -> Void) {
         guard let userId = Auth.auth().currentUser?.uid else {
@@ -95,4 +110,19 @@ struct EventServices {
             }
         }
     }
+    
+    static func deleteEventIfOwner(event: Event, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let currentUserID = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "NoUser", code: 0, userInfo: [NSLocalizedDescriptionKey: "Utilisateur non connecté"])))
+            return
+        }
+        
+        guard event.creatorID == currentUserID else {
+            completion(.failure(NSError(domain: "Unauthorized", code: 403, userInfo: [NSLocalizedDescriptionKey: "Vous n’êtes pas autorisé à supprimer cet événement"])))
+            return
+        }
+        
+        deleteEvent(id: event.id, completion: completion)
+    }
+
 }

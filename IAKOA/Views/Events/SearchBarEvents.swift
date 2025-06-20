@@ -1,127 +1,63 @@
 import SwiftUI
-import Combine
-import CoreLocation
 
 struct SearchBarEvents: View {
     @Binding var searchText: String
-    @Binding var searchCity: String
     @Binding var searchRadius: Double
     @Binding var selectedCategories: Set<String>
     let onApply: () -> Void
     let availableCategories: [(key: String, label: String, icon: String, color: String)]
-    @Binding var selectedCity: City?
-
-    @State private var citySuggestions: [City] = []
-    @State private var cancellable: AnyCancellable?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Rayon :")
-                Slider(value: $searchRadius, in: 1...100, step: 1)
-                Text("\(Int(searchRadius)) km")
-            }
-
+            // Rayon de recherche
             VStack(alignment: .leading) {
-                Text("Ville :")
-                TextField("Entrez une ville", text: $searchCity)
-                    .textFieldStyle(.roundedBorder)
-                    .onChange(of: searchCity) { _, newValue in
-                        fetchCitySuggestions(query: newValue)
-                    }
+                Text("Rayon de recherche :")
+                    .font(.headline)
 
-                if !citySuggestions.isEmpty {
-                    ScrollView(.vertical, showsIndicators: false) {
-                        VStack(alignment: .leading) {
-                            ForEach(citySuggestions.prefix(4), id: \.self) { city in
-                                Button(action: {
-                                    searchCity = city.nom
-                                    selectedCity = city
-                                    citySuggestions = []
-                                }) {
-                                    HStack {
-                                        Text(city.nom)
-                                        Spacer()
-                                        Text("\(city.codesPostaux.first ?? "")")
-                                            .foregroundColor(.secondary)
-                                            .font(.caption)
-                                    }
-                                    .padding(4)
-                                }
-                            }
-                        }
-                    }
-                    .frame(maxHeight: 100)
+                HStack {
+                    Slider(value: $searchRadius, in: 1...100, step: 1)
+                    Text("\(Int(searchRadius)) km")
+                        .frame(width: 50, alignment: .trailing)
                 }
             }
 
+            // Filtres par catégories
             VStack(alignment: .leading) {
                 Text("Catégories :")
+                    .font(.headline)
+
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack {
-                        ForEach(availableCategories, id: \.key) { cat in
+                    HStack(spacing: 10) {
+                        ForEach(availableCategories, id: \.key) { category in
                             Button(action: {
-                                if selectedCategories.contains(cat.key) {
-                                    selectedCategories.remove(cat.key)
+                                if selectedCategories.contains(category.key) {
+                                    selectedCategories.remove(category.key)
                                 } else {
-                                    selectedCategories.insert(cat.key)
+                                    selectedCategories.insert(category.key)
                                 }
                             }) {
-                                HStack {
-                                    Image(systemName: cat.icon)
-                                    Text(cat.label)
+                                HStack(spacing: 6) {
+                                    Image(systemName: category.icon)
+                                    Text(category.label)
                                 }
-                                .padding(6)
-                                .background(selectedCategories.contains(cat.key) ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
+                                .padding(.horizontal, 10)
+                                .padding(.vertical, 6)
+                                .background(selectedCategories.contains(category.key) ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
                                 .cornerRadius(8)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
             }
 
+            // Bouton Appliquer
             Button("Appliquer les filtres") {
                 onApply()
             }
             .buttonStyle(.borderedProminent)
+            .padding(.top, 4)
         }
         .padding(.horizontal)
     }
-
-    private func fetchCitySuggestions(query: String) {
-        guard query.count >= 2 else {
-            citySuggestions = []
-            return
-        }
-
-        let urlString = "https://geo.api.gouv.fr/communes?nom=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&fields=nom,codesPostaux,centre&boost=population&limit=10"
-
-        guard let url = URL(string: urlString) else { return }
-
-        cancellable?.cancel()
-        cancellable = URLSession.shared.dataTaskPublisher(for: url)
-            .map { $0.data }
-            .decode(type: [City].self, decoder: JSONDecoder())
-            .replaceError(with: [])
-            .receive(on: DispatchQueue.main)
-            .sink { cities in
-                self.citySuggestions = Array(cities.prefix(4))
-            }
-    }
-}
-
-// MARK: - Ville
-struct City: Codable, Hashable {
-    let nom: String
-    let codesPostaux: [String]
-    let centre: Coordinates
-
-    var coordinates: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(latitude: centre.coordinates[1], longitude: centre.coordinates[0])
-    }
-}
-
-struct Coordinates: Codable, Hashable {
-    let type: String
-    let coordinates: [Double]
 }

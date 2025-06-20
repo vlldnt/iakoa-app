@@ -1,7 +1,7 @@
-// EventsView.swift
 import SwiftUI
 import CoreLocation
 import FirebaseFirestore
+import Combine
 
 struct EventView: View {
     @Binding var isLoggedIn: Bool
@@ -16,13 +16,15 @@ struct EventView: View {
 
     @State private var searchText: String = ""
     @State private var showOnlyFreeEvents = false
-    @State private var searchCity: String = ""
     @State private var searchRadius: Double = 10
     @State private var selectedCategories: Set<String> = []
     @State private var isSearchExpanded = false
     @State private var selectedCity: City? = nil
 
     @StateObject private var locationManager = LocationManagerTool()
+
+    @State private var citySuggestions: [City] = []
+    @State private var cancellable: AnyCancellable?
 
     private var eventCategories: [(key: String, label: String, icon: String, color: String)] {
         EventCategories.dict.map { key, value in
@@ -34,12 +36,22 @@ struct EventView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 8) {
+                // Searchbar et filtres toujours en haut
                 HStack {
-                    TextField("Rechercher un événement...", text: $searchText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding(.vertical, 8)
-                        .padding(.leading, 8)
-                        .frame(maxWidth: .infinity)
+                    TextField("Entrez une ville", text: $searchText)
+                        .padding(10)
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                        )
+                        .background(
+                            RoundedRectangle(cornerRadius: 10)
+                                .fill(Color(.systemBackground))
+                        )
+                        .padding(.horizontal)
+                        .onChange(of: searchText) { _, newValue in
+                            fetchCitySuggestions(query: newValue)
+                        }
 
                     Button {
                         withAnimation { isSearchExpanded.toggle() }
@@ -52,23 +64,60 @@ struct EventView: View {
                     }
                     .padding(.trailing, 4)
                 }
-                .padding(.horizontal)
+                .padding(5)
+
+                if !citySuggestions.isEmpty {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(citySuggestions.prefix(3), id: \.self) { city in
+                            Button(action: {
+                                let codePostal = city.codesPostaux.first ?? ""
+                                searchText = "\(city.nom) (\(codePostal))"
+                                selectedCity = city
+                                citySuggestions = []
+                                UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                DispatchQueue.main.async {
+                                    citySuggestions = []
+                                }
+                            }) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    HStack {
+                                        Text(city.nom)
+                                            .bold()
+                                            .foregroundColor(.blueIakoa)
+                                        Text(city.codesPostaux.first ?? "")
+                                            .foregroundColor(.blueIakoa)
+                                            .font(.caption)
+                                    }
+                                    .padding(8)
+                                    
+                                    Divider()
+                                        .background(Color.systemGray6)
+                                }
+                                .background(Color.black)
+                                .cornerRadius(0)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+
 
                 if isSearchExpanded {
                     SearchBarEvents(
                         searchText: $searchText,
-                        searchCity: $searchCity,
                         searchRadius: $searchRadius,
                         selectedCategories: $selectedCategories,
                         onApply: fetchEvents,
-                        availableCategories: eventCategories,
-                        selectedCity: $selectedCity
+                        availableCategories: eventCategories
                     )
                 }
 
-                Group {
+                // Partie scrollable : liste ou message
+                ScrollView {
                     if isLoading {
                         ProgressView("Chargement des événements...")
+                            .padding()
                     } else if let error = errorMessage {
                         Text("Erreur: \(error)")
                             .foregroundColor(.red)
@@ -77,19 +126,18 @@ struct EventView: View {
                     } else if events.isEmpty {
                         Text("Aucun événement trouvé.")
                             .foregroundColor(.secondary)
-                    } else {
-                        ScrollView {
-                            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
-                                ForEach(events) { event in
-                                    eventCard(event, isLoggedIn: isLoggedIn)
-                                }
-                            }
                             .padding()
+                    } else {
+                        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
+                            ForEach(events) { event in
+                                eventCard(event, isLoggedIn: isLoggedIn)
+                            }
                         }
-                        .refreshable {
-                            fetchEvents()
-                        }
+                        .padding()
                     }
+                }
+                .refreshable {
+                    fetchEvents()
                 }
             }
             .onTapGesture {
@@ -102,6 +150,7 @@ struct EventView: View {
             .sheet(item: $selectedEvent) { event in
                 EventDetailView(event: event) {
                     selectedEvent = nil
+                    fetchEvents()
                 }
             }
             .onAppear {
@@ -167,8 +216,6 @@ struct EventView: View {
                         .bold()
                         .font(.system(size: 12))
                         .foregroundColor(Color.blueIakoa)
-                        .lineLimit(1)
-                        .fixedSize(horizontal: true, vertical: false)
                 } else {
                     (
                         Text("à partir de: ")
@@ -179,8 +226,6 @@ struct EventView: View {
                             .font(.system(size: 12))
                             .foregroundColor(Color.blueIakoa)
                     )
-                    .lineLimit(1)
-                    .fixedSize(horizontal: true, vertical: false)
                 }
             }
         }
@@ -194,11 +239,12 @@ struct EventView: View {
     private func fetchEvents() {
         isLoading = true
         errorMessage = nil
+        events = []
 
         let coordinates = selectedCity?.coordinates ?? locationManager.userLocation
 
         EventServices.fetchEvents(
-            searchText: searchText,
+            searchText: "",
             cityCoordinates: coordinates,
             radiusInKm: selectedCity == nil ? nil : searchRadius,
             selectedCategories: selectedCategories,
@@ -223,5 +269,26 @@ struct EventView: View {
         } else {
             favoriteEventIDs.insert(event.id)
         }
+    }
+
+    private func fetchCitySuggestions(query: String) {
+        guard query.count >= 2 else {
+            citySuggestions = []
+            return
+        }
+
+        let urlString = "https://geo.api.gouv.fr/communes?nom=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&fields=nom,codesPostaux,centre&boost=population&limit=10"
+
+        guard let url = URL(string: urlString) else { return }
+
+        cancellable?.cancel()
+        cancellable = URLSession.shared.dataTaskPublisher(for: url)
+            .map { $0.data }
+            .decode(type: [City].self, decoder: JSONDecoder())
+            .replaceError(with: [])
+            .receive(on: DispatchQueue.main)
+            .sink { cities in
+                self.citySuggestions = Array(cities.prefix(3))
+            }
     }
 }
