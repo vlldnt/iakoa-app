@@ -37,9 +37,14 @@ struct EventView: View {
         NavigationStack {
             VStack(spacing: 8) {
                 // Searchbar et filtres toujours en haut
-                HStack {
+                HStack(spacing: 8) {
+                    Image("playstore")
+                        .resizable()
+                        .frame(height: 50)
+                        .frame(width: 45)
                     TextField("Entrez une ville", text: $searchText)
-                        .padding(10)
+                        .padding(7)
+                        .autocorrectionDisabled(true)
                         .background(
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color.gray.opacity(0.5), lineWidth: 1)
@@ -48,9 +53,12 @@ struct EventView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .fill(Color(.systemBackground))
                         )
-                        .padding(.horizontal)
                         .onChange(of: searchText) { _, newValue in
-                            fetchCitySuggestions(query: newValue)
+                            if !newValue.contains("(") {
+                                fetchCitySuggestions(query: newValue)
+                            } else {
+                                citySuggestions = []
+                            }
                         }
 
                     Button {
@@ -58,45 +66,23 @@ struct EventView: View {
                     } label: {
                         Image(systemName: "slider.horizontal.3")
                             .font(.title2)
-                            .padding(8)
                             .background(isSearchExpanded ? Color.blue.opacity(0.15) : Color.clear)
                             .clipShape(Circle())
                     }
                     .padding(.trailing, 4)
                 }
-                .padding(5)
+                .padding(.horizontal, 25)
 
                 if !citySuggestions.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(citySuggestions.prefix(3), id: \.self) { city in
-                            Button(action: {
+                            CitySuggestionRow(city: city) {
                                 let codePostal = city.codesPostaux.first ?? ""
                                 searchText = "\(city.nom) (\(codePostal))"
                                 selectedCity = city
                                 citySuggestions = []
                                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                                DispatchQueue.main.async {
-                                    citySuggestions = []
-                                }
-                            }) {
-                                VStack(alignment: .leading, spacing: 4) {
-                                    HStack {
-                                        Text(city.nom)
-                                            .bold()
-                                            .foregroundColor(.blueIakoa)
-                                        Text(city.codesPostaux.first ?? "")
-                                            .foregroundColor(.blueIakoa)
-                                            .font(.caption)
-                                    }
-                                    .padding(8)
-                                    
-                                    Divider()
-                                        .background(Color.systemGray6)
-                                }
-                                .background(Color.black)
-                                .cornerRadius(0)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding(.horizontal)
@@ -108,6 +94,7 @@ struct EventView: View {
                         searchText: $searchText,
                         searchRadius: $searchRadius,
                         selectedCategories: $selectedCategories,
+                        isSearchExpanded: $isSearchExpanded,
                         onApply: fetchEvents,
                         availableCategories: eventCategories
                     )
@@ -290,5 +277,36 @@ struct EventView: View {
             .sink { cities in
                 self.citySuggestions = Array(cities.prefix(3))
             }
+    }
+}
+
+struct CitySuggestionRow: View {
+    let city: City
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: onTap) {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(city.nom)
+                        .bold()
+                        .foregroundColor(Color.blueIakoa)
+                        .font(.system(size: 16))
+
+                    Text("(\(city.codesPostaux.first ?? ""))")
+                        .foregroundColor(Color.blueIakoa)
+                        .font(.system(size: 14))
+                        .italic()
+                }
+                .padding(5)
+                .padding(.horizontal, 65)
+
+                Divider()
+                    .background(Color(.systemGray2))
+                    .padding(.horizontal, 65)
+            }
+            .background(Color.white)
+        }
+        .buttonStyle(.plain)
     }
 }

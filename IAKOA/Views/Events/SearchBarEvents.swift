@@ -4,8 +4,10 @@ struct SearchBarEvents: View {
     @Binding var searchText: String
     @Binding var searchRadius: Double
     @Binding var selectedCategories: Set<String>
+    @Binding var isSearchExpanded: Bool
     let onApply: () -> Void
     let availableCategories: [(key: String, label: String, icon: String, color: String)]
+    
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -23,8 +25,34 @@ struct SearchBarEvents: View {
 
             // Filtres par catégories
             VStack(alignment: .leading) {
-                Text("Catégories :")
-                    .font(.headline)
+                HStack(alignment: .center, spacing: 2) {
+                    Text("Catégories :")
+                        .font(.headline)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(availableCategories.filter { selectedCategories.contains($0.key) }, id: \.key) { category in
+                                HStack(spacing: 4) {
+                                    Image(systemName: category.icon)
+                                        .font(.system(size: 18))
+                                        .foregroundColor(.white)
+
+                                    Button(action: {
+                                        selectedCategories.remove(category.key)
+                                    }) {
+                                        Image(systemName: "xmark.circle.fill")
+                                            .font(.caption2)
+                                            .foregroundColor(.white)
+                                    }
+                                }
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(Color(hex: category.color).opacity(0.7))
+                                .clipShape(Capsule())
+                            }
+                        }
+                    }
+                }
 
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
@@ -38,14 +66,26 @@ struct SearchBarEvents: View {
                             }) {
                                 HStack(spacing: 6) {
                                     Image(systemName: category.icon)
+                                        .foregroundColor(
+                                            selectedCategories.contains(category.key) ? Color.gray.opacity(0.6) : Color(hex: category.color)
+                                        )
+                                    
                                     Text(category.label)
+                                        .foregroundColor(
+                                            selectedCategories.contains(category.key) ? Color.gray.opacity(0.6) : Color(hex: category.color)
+                                        )
+                                        .fontWeight(.medium)
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(selectedCategories.contains(category.key) ? Color.blue.opacity(0.2) : Color.gray.opacity(0.1))
-                                .cornerRadius(8)
+                                .background(
+                                    selectedCategories.contains(category.key)
+                                        ? Color.gray.opacity(0.1)
+                                        : Color(hex: category.color).opacity(0.25)
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 8))
+
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -54,6 +94,9 @@ struct SearchBarEvents: View {
             // Bouton Appliquer
             Button("Appliquer les filtres") {
                 onApply()
+                withAnimation {
+                    isSearchExpanded = false
+                }
             }
             .buttonStyle(.borderedProminent)
             .padding(.top, 4)
