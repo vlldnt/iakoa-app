@@ -5,7 +5,7 @@ import UIKit
 struct EventDetailView: View {
     let event: Event
     let onClose: () -> Void
-    
+
     @State private var showFullDescription = false
     @State private var isTextTruncated = false
     @State private var cameraPosition: MapCameraPosition
@@ -13,13 +13,12 @@ struct EventDetailView: View {
     @State private var creatorWebsite: String = ""
     @State private var selectedImageURL: URL? = nil
     @State private var showFullScreen = false
-    
     @State private var imageSizes: [String: CGSize] = [:]
 
     init(event: Event, onClose: @escaping () -> Void) {
         self.event = event
         self.onClose = onClose
-        
+
         if let location = event.location {
             let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
             _cameraPosition = State(initialValue: .region(MKCoordinateRegion(
@@ -27,14 +26,13 @@ struct EventDetailView: View {
                 span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
             )))
         } else {
-            // Valeur par défaut si pas de coordonnée : centre monde ou autre
             _cameraPosition = State(initialValue: .region(MKCoordinateRegion(
                 center: CLLocationCoordinate2D(latitude: 0, longitude: 0),
                 span: MKCoordinateSpan(latitudeDelta: 180, longitudeDelta: 360)
             )))
         }
     }
-    
+
     var body: some View {
         ZStack {
             ScrollView {
@@ -56,7 +54,7 @@ struct EventDetailView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.horizontal, 20)
                     .padding(.vertical, 5)
-                    
+
                     TabView {
                         if event.imagesLinks.isEmpty {
                             Image("playstore")
@@ -91,7 +89,6 @@ struct EventDetailView: View {
                                                         selectedImageURL = url
                                                         showFullScreen = true
                                                     }
-
                                             case .failure:
                                                 Image(systemName: "photo")
                                                     .resizable()
@@ -109,7 +106,7 @@ struct EventDetailView: View {
                     }
                     .tabViewStyle(PageTabViewStyle())
                     .frame(height: 300)
-                    
+
                     VStack(spacing: 10) {
                         Text(event.name)
                             .font(.system(size: 22))
@@ -117,14 +114,35 @@ struct EventDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .lineLimit(2)
                             .padding(.horizontal, 10)
-                        
+
+                        HStack(spacing: 3) {
+                            ForEach(event.categories, id: \.self) { category in
+                                let data = EventCategories.dict[category]
+                                let color = Color(hex: data?.color ?? "#999999")
+                                HStack(spacing: 6) {
+                                    Image(systemName: data?.icon ?? "questionmark")
+                                        .font(.system(size: 13))
+                                        .foregroundColor(color)
+                                    Text(data?.label ?? category)
+                                        .font(.system(size: 13))
+                                        .foregroundColor(color)
+                                }
+                                .padding(.vertical, 5)
+                                .padding(.horizontal, 5)
+                                .background(color.opacity(0.2))
+                                .cornerRadius(10)
+                            }
+                        }
+                        .padding(.horizontal, 10)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
                         HStack {
                             Text("Description:")
                                 .font(.system(size: 14))
                                 .bold()
                                 .italic()
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                            
+
                             Button(action: {
                                 if let url = URL(string: event.websiteLink) {
                                     UIApplication.shared.open(url)
@@ -148,7 +166,7 @@ struct EventDetailView: View {
                             .padding(10)
                         }
                         .padding(.horizontal, 5)
-                        
+
                         VStack(alignment: .leading, spacing: 4) {
                             Text(event.description)
                                 .font(.body)
@@ -177,7 +195,7 @@ struct EventDetailView: View {
                             }
                         }
                         .padding(.horizontal, 5)
-                        
+
                         HStack {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(DateUtils.formattedDates(event.dates))
@@ -189,29 +207,110 @@ struct EventDetailView: View {
                                     .foregroundColor(Color(.systemGray))
                                     .italic()
                             }
-                            
                             Spacer()
-                            
                             Text(event.pricing == 0 ? "Gratuit" : "à partir de \(Int(event.pricing)) €")
                                 .font(.headline)
                         }
                         .padding(.horizontal, 5)
                     }
-                    
-                    Map(position: $cameraPosition) {
+
+                    ZStack(alignment: .bottomTrailing) {
+                        Map(position: $cameraPosition) {
+                            if let location = event.location {
+                                Marker(event.name, coordinate: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude))
+                            }
+                        }
+                        .cornerRadius(12)
+                        .frame(height: 300)
+
                         if let location = event.location {
-                            Marker(event.name, coordinate: CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude))
+                            VStack(spacing: 12) {
+                                // Bouton recentrer
+                                Button(action: {
+                                    let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+                                    withAnimation(.easeInOut(duration: 0.5)) {
+                                        cameraPosition = .region(MKCoordinateRegion(
+                                            center: coordinate,
+                                            span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
+                                        ))
+                                    }
+                                }) {
+                                    Image(systemName: "location.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(Color.blueIakoa)
+                                        .padding(14)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                                }
+
+                                // Bouton itinéraire (menu)
+                                Menu {
+                                    // Bouton Plans (Apple Maps)
+                                    Button {
+                                        let url = URL(string: "http://maps.apple.com/?ll=\(location.latitude),\(location.longitude)")!
+                                        UIApplication.shared.open(url)
+                                    } label: {
+                                        HStack {
+                                            Image("applemaps-icon")
+                                                .resizable()
+                                                .frame(width: 24, height: 24)
+                                            Text("Ouvrir avec Plans")
+                                        }
+                                    }
+                                    // Bouton Google Maps
+                                    Button {
+                                        let url = URL(string: "comgooglemaps://?q=\(location.latitude),\(location.longitude)")!
+                                        if UIApplication.shared.canOpenURL(url) {
+                                            UIApplication.shared.open(url)
+                                        } else {
+                                            let webUrl = URL(string: "https://maps.google.com/?q=\(location.latitude),\(location.longitude)")!
+                                            UIApplication.shared.open(webUrl)
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Image("googlemaps-icon")
+                                                .resizable()
+                                                .frame(width: 24, height: 24)
+                                            Text("Ouvrir avec Google Maps")
+                                        }
+                                    }
+                                    // Bouton Waze
+                                    Button {
+                                        let url = URL(string: "waze://?ll=\(location.latitude),\(location.longitude)&navigate=yes")!
+                                        if UIApplication.shared.canOpenURL(url) {
+                                            UIApplication.shared.open(url)
+                                        } else {
+                                            let webUrl = URL(string: "https://waze.com/ul?ll=\(location.latitude),\(location.longitude)&navigate=yes")!
+                                            UIApplication.shared.open(webUrl)
+                                        }
+                                    } label: {
+                                        HStack {
+                                            Image("waze-icon")
+                                                .resizable()
+                                                .frame(width: 24, height: 24)
+                                            Text("Ouvrir avec Waze")
+                                        }
+                                    }
+                                } label: {
+                                    Image(systemName: "car.fill")
+                                        .font(.system(size: 22))
+                                        .foregroundColor(Color.green)
+                                        .padding(14)
+                                        .background(Color.white)
+                                        .clipShape(Circle())
+                                        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                                }
+                            }
+                            .padding(20)
                         }
                     }
-                    .cornerRadius(12)
-                    .frame(height: 300)
-                    
+
                     VStack {
                         HStack(spacing: 4) {
                             Text("Organisé par:")
                                 .font(.subheadline)
                                 .foregroundColor(Color(.systemGray2))
-
                             Button(action: {
                                 if let url = URL(string: creatorWebsite) {
                                     UIApplication.shared.open(url)
@@ -223,7 +322,6 @@ struct EventDetailView: View {
                                     .italic()
                             }
                         }
-                        
                         HStack(spacing: 14) {
                             if !event.facebookLink.isEmpty {
                                 Button {
@@ -237,7 +335,6 @@ struct EventDetailView: View {
                                     Image("facebook-icon").resizable().frame(width: 40, height: 40)
                                 }
                             }
-                            
                             if !event.instagramLink.isEmpty {
                                 Button {
                                     if let url = URL(string: "https://instagram.com/\(event.instagramLink)") {
@@ -247,7 +344,6 @@ struct EventDetailView: View {
                                     Image("instagram-icon").resizable().frame(width: 40, height: 40)
                                 }
                             }
-                            
                             if !event.youtubeLink.isEmpty {
                                 Button {
                                     if let url = URL(string: "https://youtube.com/@\(event.youtubeLink)") {
@@ -257,7 +353,6 @@ struct EventDetailView: View {
                                     Image("youtube-icon").resizable().frame(width: 40, height: 40)
                                 }
                             }
-                            
                             if !event.xLink.isEmpty {
                                 Button {
                                     if let url = URL(string: "https://x.com/\(event.xLink)") {
@@ -274,12 +369,10 @@ struct EventDetailView: View {
                     fetchCreatorName()
                 }
             }
-            
-            // Fullscreen Image View avec zoom + bouton fermeture
+
             if showFullScreen, let url = selectedImageURL {
                 ZStack {
                     Color.black.opacity(0.95).ignoresSafeArea()
-                    
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .empty:
@@ -294,8 +387,6 @@ struct EventDetailView: View {
                             EmptyView()
                         }
                     }
-                    
-                    // Bouton fermeture (croix)
                     VStack {
                         HStack {
                             Spacer()
@@ -328,7 +419,7 @@ struct EventDetailView: View {
             }
         }
     }
-    
+
     private func computedHeight(for link: String, containerWidth: CGFloat) -> CGFloat {
         guard let size = imageSizes[link], size.width > 0 else {
             return 270
@@ -354,7 +445,6 @@ struct ZoomableImage: View {
     let image: Image
     @State private var currentScale: CGFloat = 1.0
     @State private var lastScale: CGFloat = 1.0
-    
     @State private var offset: CGSize = .zero
     @State private var lastOffset: CGSize = .zero
 

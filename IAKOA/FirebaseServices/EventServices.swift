@@ -30,6 +30,11 @@ struct EventServices {
                 completion(.failure(error))
                 return
             }
+            if let documents = snapshot?.documents {
+                for doc in documents {
+                    print("RAW Firestore document data for event \(doc.documentID): \(doc.data())")
+                }
+            }
 
             let allEvents = snapshot?.documents.compactMap { Event(document: $0) } ?? []
 

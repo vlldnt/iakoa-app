@@ -23,7 +23,6 @@ struct SearchBarEvents: View {
                 }
             }
 
-            // Filtres par catégories
             VStack(alignment: .leading) {
                 HStack(alignment: .center, spacing: 2) {
                     Text("Catégories :")

@@ -145,7 +145,8 @@ struct EventStepsCreationView: View {
                             }) {
                                 Text(isLoading ? "Création..." : "Créer l'évènement")
                                     .frame(maxWidth: .infinity)
-                                    .padding()
+                                    .padding(8)
+                                    .bold()
                                     .background(Color.blueIakoa)
                                     .foregroundColor(.white)
                                     .cornerRadius(10)

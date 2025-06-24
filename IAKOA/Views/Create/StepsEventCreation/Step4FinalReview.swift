@@ -1,22 +1,23 @@
 import SwiftUI
 import MapKit
+import CoreLocation
 
 struct Step4EventPreview: View {
     @Binding var eventName: String
     @Binding var eventDescription: String
     @Binding var eventCategories: [String]
-
     @Binding var eventDates: [Date]
     @Binding var eventAddress: String
     @Binding var eventPrice: String
-
     @Binding var selectedImages: [UIImage]
-
     @Binding var facebookLink: String
     @Binding var instagramLink: String
     @Binding var xLink: String
     @Binding var youtubeLink: String
     @Binding var websiteLink: String
+
+    @State private var latitude: Double = 48.8566
+    @State private var longitude: Double = 2.3522
 
     var onClose: () -> Void
 
@@ -114,38 +115,54 @@ struct Step4EventPreview: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(eventDescription)
                             .font(.body)
-                            .foregroundColor(.gray)
+                            .foregroundColor(Color(UIColor.systemGray))
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .lineLimit(showFullDescription ? nil : 4)
+                            .background(
+                                Text(eventDescription)
+                                    .font(.body)
+                                    .lineLimit(6)
+                                    .background(GeometryReader { geometry in
+                                        Color.clear.onAppear {
+                                            let text = eventDescription
+                                            let textHeight = text.height(withConstrainedWidth: geometry.size.width, font: UIFont.preferredFont(forTextStyle: .body))
+                                            let lineHeight = UIFont.preferredFont(forTextStyle: .body).lineHeight
+                                            isTextTruncated = textHeight > (lineHeight * 4)
+                                        }
+                                    })
+                                    .hidden()
+                            )
                         if isTextTruncated {
                             Button(showFullDescription ? "Voir moins" : "Voir plus...") {
                                 showFullDescription.toggle()
                             }
                             .font(.caption)
-                            .foregroundColor(.blue)
+                            .foregroundColor(Color.blue)
                         }
                     }
                     .padding(.horizontal, 5)
 
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
-
                             Text(DateUtils.formattedDates(eventDates))
                                 .font(.system(size: 14))
                                 .bold()
-                                .foregroundColor(.blue)
-                            Text("Adresse: \(eventAddress)")
+                                .foregroundColor(Color.blueIakoa)
+                            Text(EventStatusUtils.eventStatus(from: eventDates))
                                 .font(.system(size: 12))
-                                .foregroundColor(.gray)
+                                .foregroundColor(Color(.systemGray))
                                 .italic()
                         }
+                        
                         Spacer()
-                        Text(eventPrice.isEmpty || eventPrice == "0" ? "Gratuit" : "\(eventPrice) €")
-                            .font(.headline)
+                        
+                        Text(eventPrice.isEmpty || eventPrice == "0" ? "Gratuit" : "à partir de \(eventPrice) €")
+                                .font(.headline)
                     }
                     .padding(.horizontal, 5)
 
                     Map(position: $cameraPosition) {
-                        Marker(eventName, coordinate: CLLocationCoordinate2D(latitude: 48.8566, longitude: 2.3522))
+                        Marker(eventName, coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
                     }
                     .cornerRadius(12)
                     .frame(height: 300)
@@ -171,6 +188,27 @@ struct Step4EventPreview: View {
                         }
                     }
                 }
+            }
+        }
+        .onAppear {
+            geocodeAddress(eventAddress)
+        }
+        .onChange(of: eventAddress) { _, newAddress in
+            geocodeAddress(newAddress)
+        }
+    }
+
+    // Géocodage d’adresse -> coordonnées GPS
+    private func geocodeAddress(_ address: String) {
+        let geocoder = CLGeocoder()
+        geocoder.geocodeAddressString(address) { placemarks, error in
+            if let coordinate = placemarks?.first?.location?.coordinate {
+                latitude = coordinate.latitude
+                longitude = coordinate.longitude
+                cameraPosition = .region(MKCoordinateRegion(
+                    center: coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
+                ))
             }
         }
     }

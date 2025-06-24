@@ -1,9 +1,9 @@
 import SwiftUI
 
 struct EventsManagerView: View {
-    
     @State private var events: [Event] = []
     @State private var isLoading = false
+    @State private var isDeleting = false
     @State private var errorMessage: String?
     @State private var showDeleteAlert = false
     @State private var eventToDelete: Event?
@@ -12,55 +12,64 @@ struct EventsManagerView: View {
 
     var body: some View {
         NavigationView {
-            VStack {
-                HStack(spacing: 8) {
-                    Image("playstore")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(height: 40)
-                    
-                    Text("Mes Événements")
-                        .font(.largeTitle)
-                        .bold()
-                        .padding(.top)
-                }
-                
-                if isLoading {
-                    ProgressView("Chargement…")
-                        .padding()
-                } else if let errorMessage = errorMessage {
-                    Text("❌ \(errorMessage)")
-                        .foregroundColor(.red)
-                        .padding()
-                } else if events.isEmpty {
-                    Text("Aucun événement trouvé.")
-                        .foregroundColor(.gray)
-                        .padding()
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 16) {
-                            ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
-                                ManagerEventCard(
-                                    event: event,
-                                    isImageOnRight: index % 1 == 1,
-                                    onEdit: {
-                                        eventToEdit = event
-                                    },
-                                    onDelete: {
-                                        eventToDelete = event
-                                        showDeleteAlert = true
-                                    },
-                                    onTap: {
-                                        selectedEvent = event
-                                    }
-                                )
+            ZStack {
+                VStack {
+                    HStack(spacing: 8) {
+                        Image("playstore")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(height: 40)
+                        Text("Mes Événements")
+                            .font(.largeTitle)
+                            .bold()
+                            .padding(.top)
+                    }
+                    if isLoading {
+                        ProgressView("Chargement…")
+                            .padding()
+                    } else if let errorMessage = errorMessage {
+                        Text("❌ \(errorMessage)")
+                            .foregroundColor(.red)
+                            .padding()
+                    } else if events.isEmpty {
+                        Text("Aucun événement trouvé.")
+                            .foregroundColor(.gray)
+                            .padding()
+                    } else {
+                        ScrollView {
+                            LazyVStack(spacing: 16) {
+                                ForEach(Array(events.enumerated()), id: \.element.id) { index, event in
+                                    ManagerEventCard(
+                                        event: event,
+                                        isImageOnRight: index % 1 == 1,
+                                        onEdit: {
+                                            eventToEdit = event
+                                        },
+                                        onDelete: {
+                                            eventToDelete = event
+                                            showDeleteAlert = true
+                                        },
+                                        onTap: {
+                                            selectedEvent = event
+                                        }
+                                    )
+                                }
                             }
+                            .padding()
                         }
+                        .refreshable {
+                            loadUserEvents()
+                        }
+                    }
+                }
+                if isDeleting {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                    ProgressView("Suppression…")
                         .padding()
-                    }
-                    .refreshable {
-                        loadUserEvents()
-                    }
+                        .background(Color(.systemBackground))
+                        .cornerRadius(12)
+                        .shadow(radius: 10)
                 }
             }
             .alert(isPresented: $showDeleteAlert) {
@@ -69,8 +78,10 @@ struct EventsManagerView: View {
                     message: Text("Confirmez-vous la suppression de cet événement ?\nToutes les informations associées seront définitivement perdues."),
                     primaryButton: .destructive(Text("Supprimer")) {
                         guard let event = eventToDelete else { return }
+                        isDeleting = true
                         EventServices.deleteEventIfOwner(event: event) { result in
                             DispatchQueue.main.async {
+                                isDeleting = false
                                 switch result {
                                 case .success():
                                     if let index = events.firstIndex(where: { $0.id == event.id }) {
@@ -104,8 +115,8 @@ struct EventsManagerView: View {
     
     private func loadUserEvents() {
         isLoading = true
-        events = []           // Vide la liste pour éviter d'afficher d'anciennes données
-        errorMessage = nil    // Réinitialise le message d'erreur
+        events = []
+        errorMessage = nil
 
         EventServices.fetchEventsForCurrentUser { result in
             DispatchQueue.main.async {
