@@ -1,6 +1,6 @@
 import SwiftUI
 import Foundation
-
+import CoreLocation
 
 extension Color {
     init(hex: String) {
@@ -16,7 +16,7 @@ extension Color {
 
         self.init(red: r, green: g, blue: b)
     }
-    
+
     static let blueIakoa = Color(hex: "#2397FF")
 }
 
@@ -192,5 +192,19 @@ struct FullScreenImageView: View {
                 }
             }
         }
+    }
+}
+extension View {
+    func hideKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+    }
+}
+
+
+func coordinatesEqual(_ lhs: CLLocationCoordinate2D?, _ rhs: CLLocationCoordinate2D?) -> Bool {
+    switch (lhs, rhs) {
+    case (nil, nil): return true
+    case let (l?, r?): return l.latitude == r.latitude && l.longitude == r.longitude
+    default: return false
     }
 }

@@ -71,14 +71,17 @@ struct Step2LocationMedia: View {
                     if dateMode == .single {
                         SingleDatePickerView(selectedDate: $singleDate)
                             .onChange(of: singleDate) { _, newValue in
+                                hideKeyboard()
                                 eventDates = [newValue]
                             }
                     } else {
                         DateRangeSelector(startDate: $startDate, endDate: $endDate)
                             .onChange(of: startDate) { _, _ in
+                                hideKeyboard()
                                 updateEventDates()
                             }
                             .onChange(of: endDate) { _, _ in
+                                hideKeyboard()
                                 updateEventDates()
                             }
                             .onAppear {
@@ -94,6 +97,8 @@ struct Step2LocationMedia: View {
         .onChange(of: dateMode) { _, newMode in
             if newMode == .single {
                 eventDates = [singleDate]
+                hideKeyboard()
+
             } else {
                 updateEventDates()
             }

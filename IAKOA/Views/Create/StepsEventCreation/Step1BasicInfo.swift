@@ -48,6 +48,7 @@ struct Step1BasicInfo: View {
                                 .foregroundColor(color)
 
                             Button(action: {
+                                hideKeyboard()
                                 eventCategories.removeAll { $0 == category }
                             }) {
                                 Image(systemName: "xmark.circle.fill")
@@ -69,6 +70,7 @@ struct Step1BasicInfo: View {
                             ForEach(EventCategories.dict.sorted(by: { $0.value.label < $1.value.label }), id: \.key) { key, data in
                                 let isSelected = eventCategories.contains(key)
                                 Button(action: {
+                                    hideKeyboard()
                                     if !isSelected && eventCategories.count < 4 {
                                         eventCategories.append(key)
                                     }

@@ -20,7 +20,8 @@ struct EventView: View {
     @State private var selectedCategories: Set<String> = []
     @State private var isSearchExpanded = false
     @State private var selectedCity: City? = nil
-
+    
+    @FocusState private var isSearchFieldFocused: Bool
     @StateObject private var locationManager = LocationManagerTool()
 
     @State private var citySuggestions: [City] = []
@@ -35,13 +36,13 @@ struct EventView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 8) {
+            VStack(spacing: 4) {
                 // Searchbar et filtres toujours en haut
                 HStack(spacing: 8) {
                     Image("playstore")
                         .resizable()
-                        .frame(height: 50)
-                        .frame(width: 45)
+                        .frame(width: 45, height: 50)
+
                     TextField("Entrez une ville", text: $searchText)
                         .padding(7)
                         .autocorrectionDisabled(true)
@@ -49,29 +50,53 @@ struct EventView: View {
                             RoundedRectangle(cornerRadius: 10)
                                 .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                         )
-                        .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .fill(Color(.systemBackground))
-                        )
+                        .focused($isSearchFieldFocused)
                         .onChange(of: searchText) { _, newValue in
-                            if !newValue.contains("(") {
+                            if newValue.isEmpty || newValue == "Ma position actuelle" {
+                                selectedCity = nil
+                                fetchEvents()
+                            } else if !newValue.contains("(") {
                                 fetchCitySuggestions(query: newValue)
                             } else {
                                 citySuggestions = []
                             }
                         }
+                        .toolbar {
+                            ToolbarItemGroup(placement: .keyboard) {
+                                Spacer()
+                                Button("Terminer") {
+                                    isSearchFieldFocused = false
+                                }
+                            }
+                        }
+
+                    if !searchText.isEmpty || selectedCity != nil || !selectedCategories.isEmpty || searchRadius != 20 {
+                        Button(action: {
+                            searchText = ""
+                            selectedCity = nil
+                            selectedCategories = []
+                            searchRadius = 20
+                            citySuggestions = []
+                            fetchEvents()
+                        }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundColor(.gray)
+                                .font(.title2)
+                        }
+                    }
 
                     Button {
                         withAnimation { isSearchExpanded.toggle() }
                     } label: {
                         Image(systemName: "slider.horizontal.3")
                             .font(.title2)
+                            .padding(6)
                             .background(isSearchExpanded ? Color.blue.opacity(0.15) : Color.clear)
                             .clipShape(Circle())
                     }
-                    .padding(.trailing, 4)
                 }
                 .padding(.horizontal, 25)
+
 
                 if !citySuggestions.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
@@ -82,12 +107,12 @@ struct EventView: View {
                                 selectedCity = city
                                 citySuggestions = []
                                 UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                                fetchEvents()
                             }
                         }
                     }
                     .padding(.horizontal)
                 }
-
 
                 if isSearchExpanded {
                     SearchBarEvents(
@@ -228,12 +253,18 @@ struct EventView: View {
         errorMessage = nil
         events = []
 
-        let coordinates = selectedCity?.coordinates ?? locationManager.userLocation
+        let coordinates: CLLocationCoordinate2D?
+
+        if searchText == "Ma position actuelle" {
+            coordinates = locationManager.userLocation
+        } else {
+            coordinates = selectedCity?.coordinates
+        }
 
         EventServices.fetchEvents(
             searchText: "",
             cityCoordinates: coordinates,
-            radiusInKm: selectedCity == nil ? nil : searchRadius,
+            radiusInKm: searchRadius,
             selectedCategories: selectedCategories,
             showOnlyFree: showOnlyFreeEvents
         ) { result in

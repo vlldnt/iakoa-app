@@ -1,6 +1,7 @@
 import SwiftUI
 import MapKit
 import CoreLocation
+import FirebaseAuth
 
 struct Step4EventPreview: View {
     @Binding var eventName: String
@@ -15,12 +16,14 @@ struct Step4EventPreview: View {
     @Binding var xLink: String
     @Binding var youtubeLink: String
     @Binding var websiteLink: String
-
+    @Binding var websiteEvent: String
+    
     @State private var latitude: Double = 48.8566
     @State private var longitude: Double = 2.3522
-
+    @State private var creatorName: String = ""
+    
     var onClose: () -> Void
-
+    
     @State private var cameraPosition = MapCameraPosition.region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 48.8566, longitude: 2.3522),
@@ -29,7 +32,7 @@ struct Step4EventPreview: View {
     )
     @State private var showFullDescription = false
     @State private var isTextTruncated = false
-
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -50,7 +53,7 @@ struct Step4EventPreview: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 5)
-
+                
                 TabView {
                     if selectedImages.isEmpty {
                         Image("playstore")
@@ -71,7 +74,7 @@ struct Step4EventPreview: View {
                 }
                 .tabViewStyle(PageTabViewStyle())
                 .frame(height: 270)
-
+                
                 VStack(spacing: 10) {
                     Text(eventName)
                         .font(.system(size: 22))
@@ -79,17 +82,21 @@ struct Step4EventPreview: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .lineLimit(2)
                         .padding(.horizontal, 10)
-
+                    
                     HStack {
                         Text("Description:")
                             .font(.system(size: 14))
                             .bold()
                             .italic()
                             .frame(maxWidth: .infinity, alignment: .leading)
-
-                        if !websiteLink.isEmpty {
+                        
+                        if !websiteEvent.isEmpty {
                             Button(action: {
-                                if let url = URL(string: websiteLink) {
+                                var link = websiteEvent.trimmingCharacters(in: .whitespacesAndNewlines)
+                                if !link.lowercased().hasPrefix("http") {
+                                    link = "https://" + link
+                                }
+                                if let url = URL(string: link) {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
@@ -111,7 +118,7 @@ struct Step4EventPreview: View {
                         }
                     }
                     .padding(.horizontal, 5)
-
+                    
                     VStack(alignment: .leading, spacing: 4) {
                         Text(eventDescription)
                             .font(.body)
@@ -141,7 +148,7 @@ struct Step4EventPreview: View {
                         }
                     }
                     .padding(.horizontal, 5)
-
+                    
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(DateUtils.formattedDates(eventDates))
@@ -157,21 +164,32 @@ struct Step4EventPreview: View {
                         Spacer()
                         
                         Text(eventPrice.isEmpty || eventPrice == "0" ? "Gratuit" : "à partir de \(eventPrice) €")
-                                .font(.headline)
+                            .font(.headline)
                     }
                     .padding(.horizontal, 5)
-
+                    
                     Map(position: $cameraPosition) {
                         Marker(eventName, coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude))
                     }
                     .cornerRadius(12)
                     .frame(height: 300)
-
+                    
                     VStack {
-                        Text("Organisé par: Utilisateur")
-                            .font(.subheadline)
-                            .foregroundColor(.gray)
-
+                        HStack(spacing: 4) {
+                            Text("Organisé par:")
+                                .font(.subheadline)
+                                .foregroundColor(Color(.systemGray2))
+                            Button(action: {
+                                if let url = URL(string: websiteLink) {
+                                    UIApplication.shared.open(url)
+                                }
+                            }) {
+                                Text(creatorName)
+                                    .font(.subheadline)
+                                    .foregroundColor(Color.blueIakoa)
+                                    .italic()
+                            }
+                        }
                         HStack(spacing: 14) {
                             if !facebookLink.isEmpty {
                                 SocialButton(imageName: "facebook-icon", link: "https://facebook.com/\(facebookLink)")
@@ -197,7 +215,7 @@ struct Step4EventPreview: View {
             geocodeAddress(newAddress)
         }
     }
-
+    
     // Géocodage d’adresse -> coordonnées GPS
     private func geocodeAddress(_ address: String) {
         let geocoder = CLGeocoder()
@@ -212,6 +230,15 @@ struct Step4EventPreview: View {
             }
         }
     }
+    private func fetchCreatorName() {
+            guard let uid = Auth.auth().currentUser?.uid else { return }
+            UserServices.fetchUser(uid: uid) { user in
+                if let user = user {
+                    creatorName = user.name
+                }
+            }
+        }
+
 }
 
 struct SocialButton: View {

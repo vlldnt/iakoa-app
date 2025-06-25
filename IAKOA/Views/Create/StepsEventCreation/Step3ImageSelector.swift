@@ -3,93 +3,126 @@ import PhotosUI
 
 struct Step3ImageSelector: View {
     @Binding var selectedImages: [UIImage]
-    @State private var photoPickerItems: [PhotosPickerItem] = []
+    @Binding var websiteEvent: String
 
+    @State private var photoPickerItems: [PhotosPickerItem] = []
     @State private var showPhotoSourceDialog = false
     @State private var showCamera = false
     @State private var showPhotosPicker = false
-    
+
     let screenWidth = UIScreen.main.bounds.width
 
     var body: some View {
-        VStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("Image principale (utilisée pour la vignette)")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
+        ScrollView {
+            VStack(spacing: 16) {
 
-                if let mainImage = selectedImages.first {
-                    Image(uiImage: mainImage)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 250)
-                        .clipped()
-                        .cornerRadius(12)
-                } else {
-                    Image(systemName: "photo")
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 250)
-                        .clipped()
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                        )
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Site internet de l’événement")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                    TextField("https://exemple.com", text: $websiteEvent)
+                        .autocapitalization(.none)
+                        .textContentType(.URL)
+                        .padding(10)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
                 }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
 
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Image principale (utilisée pour la vignette)")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
 
-            Text("Ajoutez jusqu'à 3 photos")
-                .font(.headline)
+                    if let mainImage = selectedImages.first {
+                        GeometryReader { geometry in
+                            let screenWidth = geometry.size.width
+                            let imageRatio = mainImage.size.height / mainImage.size.width
+                            let computedHeight = screenWidth * imageRatio
 
-            HStack(spacing: 10) {
-                ForEach(Array(selectedImages.enumerated()), id: \.offset) { index, image in
-                    ZStack(alignment: .topTrailing) {
-                        Image(uiImage: image)
+                            Image(uiImage: mainImage)
+                                .resizable()
+                                .scaledToFill()
+                                .frame(width: screenWidth, height: computedHeight)
+                                .clipped()
+                                .cornerRadius(12)
+                        }
+                        .frame(height: (mainImage.size.height / mainImage.size.width) * screenWidth)
+                    } else {
+                        Image(systemName: "photo")
                             .resizable()
-                            .scaledToFill()
-                            .frame(width: 100, height: 80)
+                            .scaledToFit()
+                            .frame(maxWidth: .infinity)
+                            .aspectRatio(4/3, contentMode: .fit)
                             .clipped()
-                            .cornerRadius(10)
-
-                        Button(action: {
-                            selectedImages.remove(at: index)
-                        }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .foregroundColor(.red)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                        }
-                        .offset(x: 6, y: -6)
+                            .cornerRadius(12)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                            )
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
 
-                ForEach(selectedImages.count..<3, id: \.self) { _ in
-                    Button(action: {
-                        showPhotoSourceDialog = true
-                    }) {
-                        ZStack {
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.gray.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5]))
-                                .background(Color.gray.opacity(0.05))
+
+                Text("Ajoutez jusqu'à 3 photos")
+                    .font(.headline)
+
+                HStack(spacing: 10) {
+                    ForEach(Array(selectedImages.enumerated()), id: \.offset) { index, image in
+                        ZStack(alignment: .topTrailing) {
+                            Image(uiImage: image)
+                                .resizable()
+                                .scaledToFill()
                                 .frame(width: 100, height: 80)
-                            Image(systemName: "plus")
-                                .font(.system(size: 24, weight: .bold))
-                                .foregroundColor(.gray)
+                                .clipped()
+                                .cornerRadius(10)
+
+                            Button(action: {
+                                hideKeyboard()
+                                selectedImages.remove(at: index)
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.red)
+                                    .background(Color.white)
+                                    .clipShape(Circle())
+                            }
+                            .offset(x: 6, y: -6)
+                        }
+                    }
+
+                    ForEach(selectedImages.count..<3, id: \.self) { _ in
+                        Button(action: {
+                            hideKeyboard()
+                            showPhotoSourceDialog = true
+                        }) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(Color.gray.opacity(0.3), style: StrokeStyle(lineWidth: 1, dash: [5]))
+                                    .background(Color.gray.opacity(0.05))
+                                    .frame(width: 100, height: 80)
+                                Image(systemName: "plus")
+                                    .font(.system(size: 24, weight: .bold))
+                                    .foregroundColor(.gray)
+                            }
                         }
                     }
                 }
-            }
 
-            .confirmationDialog("Ajouter une photo", isPresented: $showPhotoSourceDialog) {
-                Button("Appareil photo") { showCamera = true }
-                Button("Mes photos") { showPhotosPicker = true }
-                Button("Annuler", role: .cancel) {}
+                .confirmationDialog("Ajouter une photo", isPresented: $showPhotoSourceDialog) {
+                    Button("Appareil photo") {
+                        hideKeyboard()
+                        showCamera = true
+                    }
+                    Button("Mes photos") {
+                        hideKeyboard()
+                        showPhotosPicker = true
+                    }
+                    Button("Annuler", role: .cancel) {}
+                }
             }
+            .padding()
         }
-        .padding()
+        .scrollDismissesKeyboard(.interactively)
         .sheet(isPresented: $showCamera) {
             ImagePicker(sourceType: .camera) { image in
                 if let image = image, selectedImages.count < 3 {

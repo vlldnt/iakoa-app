@@ -14,6 +14,8 @@ struct EventDetailView: View {
     @State private var selectedImageURL: URL? = nil
     @State private var showFullScreen = false
     @State private var imageSizes: [String: CGSize] = [:]
+    @State private var showDirectionsMenu = false
+    @Namespace private var directionsMenuNamespace
 
     init(event: Event, onClose: @escaping () -> Void) {
         self.event = event
@@ -59,10 +61,15 @@ struct EventDetailView: View {
                         if event.imagesLinks.isEmpty {
                             Image("playstore")
                                 .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(height: 270)
+                                .scaledToFit()
                                 .frame(maxWidth: .infinity)
+                                .aspectRatio(4/3, contentMode: .fit)
                                 .clipped()
+                                .cornerRadius(12)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                )
                         } else {
                             ForEach(event.imagesLinks.prefix(3), id: \.self) { link in
                                 if let url = URL(string: link) {
@@ -71,18 +78,21 @@ struct EventDetailView: View {
                                             switch phase {
                                             case .empty:
                                                 ProgressView()
-                                                    .frame(maxWidth: .infinity)
-                                                    .frame(height: 270)
+                                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                                             case .success(let image):
+                                                let imageSize = imageSizes[link] ?? CGSize(width: 4, height: 3)
+                                                let imageRatio = imageSize.height / imageSize.width
+                                                let computedHeight = geo.size.width * imageRatio
+
                                                 image
                                                     .resizable()
-                                                    .aspectRatio(contentMode: .fit)
-                                                    .frame(width: geo.size.width)
+                                                    .scaledToFill()
+                                                    .frame(width: geo.size.width, height: computedHeight)
+                                                    .clipped()
+                                                    .cornerRadius(12)
                                                     .onAppear {
-                                                        if imageSizes[link] == nil {
-                                                            if let uiImage = image.asUIImage() {
-                                                                imageSizes[link] = uiImage.size
-                                                            }
+                                                        if imageSizes[link] == nil, let uiImage = image.asUIImage() {
+                                                            imageSizes[link] = uiImage.size
                                                         }
                                                     }
                                                     .onTapGesture {
@@ -92,14 +102,17 @@ struct EventDetailView: View {
                                             case .failure:
                                                 Image(systemName: "photo")
                                                     .resizable()
-                                                    .aspectRatio(contentMode: .fit)
+                                                    .scaledToFit()
                                                     .frame(maxWidth: .infinity)
-                                                    .foregroundColor(.gray)
+                                                    .aspectRatio(4/3, contentMode: .fit)
+                                                    .clipped()
+                                                    .cornerRadius(12)
                                             @unknown default:
                                                 EmptyView()
                                             }
                                         }
                                     }
+                                    .frame(height: 300)
                                 }
                             }
                         }
@@ -148,17 +161,31 @@ struct EventDetailView: View {
                                     UIApplication.shared.open(url)
                                 }
                             }) {
-                                HStack(spacing: 2) {
-                                    Image("website-icon")
-                                        .resizable()
-                                        .renderingMode(.template)
-                                        .foregroundColor(.white)
-                                        .frame(width: 20, height: 20)
-                                        .padding(8)
-                                    Text("Lien site web")
-                                        .font(.system(size: 14, weight: .bold))
-                                        .foregroundColor(.white)
-                                        .padding(.trailing, 8)
+                                if !event.websiteLink.isEmpty {
+                                    Button(action: {
+                                        var link = event.websiteLink.trimmingCharacters(in: .whitespacesAndNewlines)
+                                        if !link.lowercased().hasPrefix("http") {
+                                            link = "https://" + link
+                                        }
+                                        if let url = URL(string: link) {
+                                            UIApplication.shared.open(url)
+                                        }
+                                    }) {
+                                        HStack(spacing: 2) {
+                                            Image("website-icon")
+                                                .resizable()
+                                                .renderingMode(.template)
+                                                .foregroundColor(.white)
+                                                .frame(width: 20, height: 20)
+                                                .padding(8)
+                                            Text("Lien site web")
+                                                .font(.system(size: 14, weight: .bold))
+                                                .foregroundColor(.white)
+                                                .padding(.trailing, 8)
+                                        }
+                                    }
+                                    .background(Color.blue)
+                                    .cornerRadius(10)
                                 }
                             }
                             .background(Color.blueIakoa)
@@ -194,6 +221,7 @@ struct EventDetailView: View {
                                 .foregroundColor(Color.blue)
                             }
                         }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 5)
 
                         HStack {
@@ -204,10 +232,10 @@ struct EventDetailView: View {
                                     .foregroundColor(Color.blueIakoa)
                                 Text(EventStatusUtils.eventStatus(from: event.dates))
                                     .font(.system(size: 12))
-                                    .foregroundColor(Color(.systemGray))
-                                    .italic()
                             }
                             Spacer()
+                                    .italic()
+                                    .foregroundColor(Color(.systemGray))
                             Text(event.pricing == 0 ? "Gratuit" : "à partir de \(Int(event.pricing)) €")
                                 .font(.headline)
                         }
@@ -225,81 +253,114 @@ struct EventDetailView: View {
 
                         if let location = event.location {
                             VStack(spacing: 12) {
-                                // Bouton recentrer
-                                Button(action: {
-                                    let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
-                                    withAnimation(.easeInOut(duration: 0.5)) {
-                                        cameraPosition = .region(MKCoordinateRegion(
-                                            center: coordinate,
-                                            span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
-                                        ))
+                                if !showDirectionsMenu {
+                                    // Bouton recentrer
+                                    Button(action: {
+                                        let coordinate = CLLocationCoordinate2D(latitude: location.latitude, longitude: location.longitude)
+                                        withAnimation(.easeInOut(duration: 0.5)) {
+                                            cameraPosition = .region(MKCoordinateRegion(
+                                                center: coordinate,
+                                                span: MKCoordinateSpan(latitudeDelta: 0.015, longitudeDelta: 0.015)
+                                            ))
+                                        }
+                                    }) {
+                                        Image(systemName: "location.fill")
+                                            .font(.system(size: 22))
+                                            .foregroundColor(Color.blueIakoa)
+                                            .padding(14)
+                                            .background(Color.white)
+                                            .clipShape(Circle())
+                                            .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
                                     }
-                                }) {
-                                    Image(systemName: "location.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundColor(Color.blueIakoa)
-                                        .padding(14)
-                                        .background(Color.white)
-                                        .clipShape(Circle())
-                                        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
-                                }
+                                    .matchedGeometryEffect(id: "recenter", in: directionsMenuNamespace)
 
-                                // Bouton itinéraire (menu)
-                                Menu {
-                                    // Bouton Plans (Apple Maps)
-                                    Button {
-                                        let url = URL(string: "http://maps.apple.com/?ll=\(location.latitude),\(location.longitude)")!
-                                        UIApplication.shared.open(url)
-                                    } label: {
-                                        HStack {
+                                    // Bouton voiture qui affiche le menu
+                                    Button(action: {
+                                        withAnimation(.spring(response: 0.45, dampingFraction: 0.65, blendDuration: 0.2)) {
+                                            showDirectionsMenu = true
+                                        }
+                                    }) {
+                                        Image(systemName: "car.fill")
+                                            .font(.system(size: 22))
+                                            .foregroundColor(Color.green)
+                                            .padding(14)
+                                            .background(Color.white)
+                                            .clipShape(Circle())
+                                            .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                                    }
+                                    .matchedGeometryEffect(id: "car", in: directionsMenuNamespace)
+                                } else {
+                                    VStack(spacing: 20) {
+                                        // Icônes verticales
+                                        Button {
+                                            let url = URL(string: "http://maps.apple.com/?ll=\(location.latitude),\(location.longitude)")!
+                                            if UIApplication.shared.canOpenURL(url) {
+                                                UIApplication.shared.open(url)
+                                            }
+                                        } label: {
                                             Image("applemaps-icon")
                                                 .resizable()
-                                                .frame(width: 24, height: 24)
-                                            Text("Ouvrir avec Plans")
+                                                .frame(width: 32, height: 32)
+                                                .padding(10)
+                                                .background(Color.white)
+                                                .clipShape(Circle())
+                                                .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
                                         }
-                                    }
-                                    // Bouton Google Maps
-                                    Button {
-                                        let url = URL(string: "comgooglemaps://?q=\(location.latitude),\(location.longitude)")!
-                                        if UIApplication.shared.canOpenURL(url) {
-                                            UIApplication.shared.open(url)
-                                        } else {
-                                            let webUrl = URL(string: "https://maps.google.com/?q=\(location.latitude),\(location.longitude)")!
-                                            UIApplication.shared.open(webUrl)
-                                        }
-                                    } label: {
-                                        HStack {
+
+                                        Button {
+                                            let url = URL(string: "comgooglemaps://?q=\(location.latitude),\(location.longitude)")!
+                                            if UIApplication.shared.canOpenURL(url) {
+                                                UIApplication.shared.open(url)
+                                            } else {
+                                                let webUrl = URL(string: "https://maps.google.com/?q=\(location.latitude),\(location.longitude)")!
+                                                UIApplication.shared.open(webUrl)
+                                            }
+                                        } label: {
                                             Image("googlemaps-icon")
                                                 .resizable()
-                                                .frame(width: 24, height: 24)
-                                            Text("Ouvrir avec Google Maps")
+                                                .frame(width: 32, height: 32)
+                                                .padding(10)
+                                                .background(Color.white)
+                                                .clipShape(Circle())
+                                                .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
                                         }
-                                    }
-                                    // Bouton Waze
-                                    Button {
-                                        let url = URL(string: "waze://?ll=\(location.latitude),\(location.longitude)&navigate=yes")!
-                                        if UIApplication.shared.canOpenURL(url) {
-                                            UIApplication.shared.open(url)
-                                        } else {
-                                            let webUrl = URL(string: "https://waze.com/ul?ll=\(location.latitude),\(location.longitude)&navigate=yes")!
-                                            UIApplication.shared.open(webUrl)
-                                        }
-                                    } label: {
-                                        HStack {
+
+                                        Button {
+                                            let url = URL(string: "waze://?ll=\(location.latitude),\(location.longitude)&navigate=yes")!
+                                            if UIApplication.shared.canOpenURL(url) {
+                                                UIApplication.shared.open(url)
+                                            } else {
+                                                let webUrl = URL(string: "https://waze.com/ul?ll=\(location.latitude),\(location.longitude)&navigate=yes")!
+                                                UIApplication.shared.open(webUrl)
+                                            }
+                                        } label: {
                                             Image("waze-icon")
                                                 .resizable()
-                                                .frame(width: 24, height: 24)
-                                            Text("Ouvrir avec Waze")
+                                                .frame(width: 32, height: 32)
+                                                .padding(10)
+                                                .background(Color.white)
+                                                .clipShape(Circle())
+                                                .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
                                         }
+
+                                        // Bouton pour fermer le menu
+                                        Button(action: {
+                                            withAnimation(.spring(response: 0.45, dampingFraction: 0.65, blendDuration: 0.2)) {
+                                                showDirectionsMenu = false
+                                            }
+                                        }) {
+                                            Image(systemName: "chevron.down")
+                                                .font(.system(size: 22))
+                                                .foregroundColor(Color.gray)
+                                                .padding(10)
+                                                .background(Color.white)
+                                                .clipShape(Circle())
+                                                .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                                        }
+                                        .padding(.top, 8)
                                     }
-                                } label: {
-                                    Image(systemName: "car.fill")
-                                        .font(.system(size: 22))
-                                        .foregroundColor(Color.green)
-                                        .padding(14)
-                                        .background(Color.white)
-                                        .clipShape(Circle())
-                                        .shadow(color: Color.black.opacity(0.08), radius: 4, x: 0, y: 2)
+                                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                                    .matchedGeometryEffect(id: "car", in: directionsMenuNamespace)
                                 }
                             }
                             .padding(20)
@@ -312,11 +373,17 @@ struct EventDetailView: View {
                                 .font(.subheadline)
                                 .foregroundColor(Color(.systemGray2))
                             Button(action: {
-                                if let url = URL(string: creatorWebsite) {
-                                    UIApplication.shared.open(url)
-                                }
+                                var link = creatorWebsite.trimmingCharacters(in: .whitespacesAndNewlines)
+                                    if !link.isEmpty {
+                                        if !link.lowercased().hasPrefix("http") {
+                                            link = "https://" + link
+                                        }
+                                        if let url = URL(string: link) {
+                                            UIApplication.shared.open(url)
+                                        }
+                                    }
                             }) {
-                                Text(creatorName)
+                                Text(creatorName.isEmpty ? "Utilisateur inconnu" : creatorName)
                                     .font(.subheadline)
                                     .foregroundColor(Color.blueIakoa)
                                     .italic()

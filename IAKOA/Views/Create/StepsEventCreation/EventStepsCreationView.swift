@@ -17,6 +17,7 @@ struct EventStepsCreationView: View {
 
     // Step 3:
     @State private var selectedImages: [UIImage] = []
+    @State private var websiteEvent: String = ""
 
     // User info:
     @State private var facebookLink: String = ""
@@ -31,7 +32,7 @@ struct EventStepsCreationView: View {
     @State private var shouldDismissAfterAlert = false
 
     @State private var step: Int = 0
-
+    
     @ObservedObject private var addressSearchService = AddressSearchService()
     @Environment(\.dismiss) private var dismiss
 
@@ -52,7 +53,7 @@ struct EventStepsCreationView: View {
                 )
                 .tag(1)
 
-                Step3ImageSelector(selectedImages: $selectedImages)
+                Step3ImageSelector(selectedImages: $selectedImages, websiteEvent: $websiteEvent)
                 .tag(2)
 
                 Step4EventPreview(
@@ -68,6 +69,7 @@ struct EventStepsCreationView: View {
                     xLink: $xLink,
                     youtubeLink: $youtubeLink,
                     websiteLink: $websiteLink,
+                    websiteEvent: $websiteEvent,
                     onClose: { dismiss() }
                 )
                 .tag(3)
@@ -84,6 +86,7 @@ struct EventStepsCreationView: View {
                     HStack {
                         if step > 0 {
                             Button("Précédent") {
+                                hideKeyboard()
                                 step -= 1
                             }
                             .frame(width: 80, height: 35)
@@ -105,6 +108,7 @@ struct EventStepsCreationView: View {
 
                         if step < 3 {
                             Button("Suivant") {
+                                hideKeyboard()
                                 if step == 0 && !isStep1Valid {
                                     // Do nothing
                                 } else {
@@ -130,7 +134,7 @@ struct EventStepsCreationView: View {
                                     instagramLink: instagramLink,
                                     xLink: xLink,
                                     youtubeLink: youtubeLink,
-                                    websiteLink: websiteLink,
+                                    websiteLink: websiteEvent,
                                     showAlert: { message in
                                         alertMessage = message
                                         showAlert = true
@@ -161,14 +165,7 @@ struct EventStepsCreationView: View {
                 .background(Color.white)
             }
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .keyboard) {
-                Spacer()
-                Button("Terminé") {
-                    UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                }
-            }
-        }
+
         .alert(isPresented: $showAlert) {
             Alert(
                 title: Text("Succès"),

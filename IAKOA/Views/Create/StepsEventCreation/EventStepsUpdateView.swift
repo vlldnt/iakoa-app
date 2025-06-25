@@ -20,6 +20,7 @@ struct EventStepsUpdateView: View {
 
     // Step 3:
     @State private var selectedImages: [UIImage] = []
+    @State private var websiteEvent: String = ""
 
     // Links:
     @State private var facebookLink: String = ""
@@ -43,10 +44,40 @@ struct EventStepsUpdateView: View {
     var body: some View {
         VStack {
             TabView(selection: $step) {
-                step1View().tag(0)
-                step2View().tag(1)
-                step3View().tag(2)
-                step4View().tag(3)
+                Step1BasicInfo(
+                    eventName : $eventName,
+                    eventDescription: $eventDescription,
+                    eventCategories: $eventCategories
+                )
+                .tag(0)
+
+                Step2LocationMedia(
+                    eventDates: $eventDates,
+                    eventAddress: $eventAddress,
+                    eventPrice: $eventPrice
+                )
+                .tag(1)
+
+                Step3ImageSelector(selectedImages: $selectedImages, websiteEvent: $websiteEvent)
+                .tag(2)
+
+                Step4EventPreview(
+                    eventName: $eventName,
+                    eventDescription: $eventDescription,
+                    eventCategories: $eventCategories,
+                    eventDates: $eventDates,
+                    eventAddress: $eventAddress,
+                    eventPrice: $eventPrice,
+                    selectedImages: $selectedImages,
+                    facebookLink: $facebookLink,
+                    instagramLink: $instagramLink,
+                    xLink: $xLink,
+                    youtubeLink: $youtubeLink,
+                    websiteLink: $websiteLink,
+                    websiteEvent: $websiteEvent,
+                    onClose: { dismiss() }
+                )
+                .tag(3)
             }
             .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
 
@@ -102,45 +133,6 @@ struct EventStepsUpdateView: View {
         }
     }
 
-    // MARK: - Step Views
-
-    private func step1View() -> some View {
-        Step1BasicInfo(
-            eventName: $eventName,
-            eventDescription: $eventDescription,
-            eventCategories: $eventCategories
-        )
-    }
-
-    private func step2View() -> some View {
-        Step2LocationMedia(
-            eventDates: $eventDates,
-            eventAddress: $eventAddress,
-            eventPrice: $eventPrice
-        )
-    }
-
-    private func step3View() -> some View {
-        Step3ImageSelector(selectedImages: $selectedImages)
-    }
-
-    private func step4View() -> some View {
-        Step4EventPreview(
-            eventName: $eventName,
-            eventDescription: $eventDescription,
-            eventCategories: $eventCategories,
-            eventDates: $eventDates,
-            eventAddress: $eventAddress,
-            eventPrice: $eventPrice,
-            selectedImages: $selectedImages,
-            facebookLink: $facebookLink,
-            instagramLink: $instagramLink,
-            xLink: $xLink,
-            youtubeLink: $youtubeLink,
-            websiteLink: $websiteLink,
-            onClose: { dismiss() }
-        )
-    }
 
     // MARK: - Navigation Buttons
 
@@ -202,7 +194,7 @@ struct EventStepsUpdateView: View {
                             instagramLink: instagramLink,
                             xLink: xLink,
                             youtubeLink: youtubeLink,
-                            websiteLink: websiteLink,
+                            websiteLink: websiteEvent,
                             showAlert: { message in
                                 alertMessage = message
                                 showAlert = true
@@ -233,6 +225,7 @@ struct EventStepsUpdateView: View {
         .padding(8)
         .background(Color.white)
     }
+    
 
     // MARK: - Helpers
 
