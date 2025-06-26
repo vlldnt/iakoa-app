@@ -33,28 +33,31 @@ struct EventCard: View {
                             .cornerRadius(12)
                     }
                 }
-                HStack {
-                    Spacer()
-                    Button(action: onFavoriteToggle) {
-                        Image(systemName: isFavorite ? "heart.fill" : "heart")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 20, height: 20)
-                            .foregroundColor(isFavorite ? .red : .gray)
-                            .padding(6)
-                            .background(
-                                Circle()
-                                    .fill(isFavorite ? .white.opacity(0.9) : Color.white)
-                            )
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
-                            )
-                            .shadow(color: .black.opacity(0.08), radius: 2, x: 0, y: 1)
+                if !isCreator && isLoggedIn {
+                    
+                    HStack {
+                        Spacer()
+                        Button(action: onFavoriteToggle) {
+                            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 20, height: 20)
+                                .foregroundColor(isFavorite ? .red : .gray)
+                                .padding(6)
+                                .background(
+                                    Circle()
+                                        .fill(isFavorite ? Color.white.opacity(0.9) : Color.white)
+                                )
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                                )
+                                .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
+                        }
+                        .padding(8)
                     }
-                    .padding(8)
+                    .frame(width: 170, height: 130, alignment: .top)
                 }
-                .frame(width: 170, height: 130, alignment: .top)
             }
             .cornerRadius(15)
             .contentShape(Rectangle())

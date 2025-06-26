@@ -47,18 +47,10 @@ struct EventView: View {
                         .padding(7)
                         .autocorrectionDisabled(true)
                         .background(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(Color.gray.opacity(0.5), lineWidth: 1)
+                            Circle()
+                                .fill(Color.white)
                         )
                         .focused($isSearchFieldFocused)
-                        .toolbar {
-                            ToolbarItemGroup(placement: .keyboard) {
-                                Spacer()
-                                Button("Terminer") {
-                                    isSearchFieldFocused = false
-                                }
-                            }
-                        }
                         .onChange(of: searchText) { _, newValue in
                             if newValue.isEmpty {
                                 selectedCity = nil
@@ -173,7 +165,6 @@ struct EventView: View {
                                     isFavorite: favoriteEventIDs.contains(event.id),
                                     onFavoriteToggle: {
                                         toggleFavorite(event)
-                                        EventServices.toggleFavorite(event: event)
                                     },
                                     onTap: { selectedEvent = event }
                                 )
@@ -203,8 +194,16 @@ struct EventView: View {
                 fetchEvents()
             }
         }
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Terminer") {
+                    isSearchFieldFocused = false
+                }
+            }
+        }
     }
-
+    
     private func fetchEvents() {
         isLoading = true
         errorMessage = nil

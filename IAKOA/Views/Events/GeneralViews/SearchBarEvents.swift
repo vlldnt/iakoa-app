@@ -89,7 +89,7 @@ struct SearchBarEvents: View {
                                         .padding(.vertical, 6)
                                         .background(
                                             selectedCategories.contains(category.key)
-                                            ? .gray.opacity(0.2)
+                                            ? Color.gray.opacity(0.2)
                                             : Color(hex: category.color).opacity(0.2)
                                         )
                                         .clipShape(RoundedRectangle(cornerRadius: 8))

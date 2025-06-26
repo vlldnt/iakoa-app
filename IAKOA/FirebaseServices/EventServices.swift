@@ -125,40 +125,50 @@ struct EventServices {
         deleteEvent(id: event.id, completion: completion)
     }
     
-    static func toggleFavorite(event: Event) {
-        guard let userId = Auth.auth().currentUser?.uid else { return }
-        let db = Firestore.firestore()
-        let userFavoritesRef = db.collection("userfavorites").document(userId)
-
-        userFavoritesRef.getDocument { document, error in
-            if let document = document, document.exists {
-                var eventIDs = document.data()?["eventIDs"] as? [String] ?? []
-                if let index = eventIDs.firstIndex(of: event.id) {
-                    eventIDs.remove(at: index)
-                } else {
-                    eventIDs.append(event.id)
-                }
-                userFavoritesRef.setData(["userID": userId, "eventIDs": eventIDs], merge: true)
-            } else {
-                userFavoritesRef.setData(["userID": userId, "eventIDs": [event.id]])
-            }
-        }
-    }
-    static func removeFromFavorites(eventID: String, completion: ((Result<Void, Error>) -> Void)? = nil) {
-        guard let userId = Auth.auth().currentUser?.uid else {
-            completion?(.failure(NSError(domain: "NoUser", code: 0)))
+    func toggleFavoriteEvent(eventID: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            print("Utilisateur non connecté")
             return
         }
 
-        let userFavoritesRef = Firestore.firestore().collection("userfavorites").document(userId)
-        userFavoritesRef.updateData([
-            "eventIDs": FieldValue.arrayRemove([eventID])
-        ]) { error in
+        let db = Firestore.firestore()
+        let docRef = db.collection("userfavorites").document(userID)
+
+        docRef.getDocument { document, error in
             if let error = error {
-                completion?(.failure(error))
+                completion(.failure(error))
+                return
+            }
+
+            var eventIDs: [String] = []
+
+            if let document = document, document.exists {
+                let data = document.data()
+                eventIDs = data?["eventIDs"] as? [String] ?? []
+            }
+
+            if eventIDs.contains(eventID) {
+                // Retirer si déjà favori
+                eventIDs.removeAll { $0 == eventID }
             } else {
-                completion?(.success(()))
+                // Ajouter si pas encore favori
+                eventIDs.append(eventID)
+            }
+
+            // Mise à jour ou création du document
+            let updatedData: [String: Any] = [
+                "userID": userID,
+                "eventIDs": eventIDs
+            ]
+
+            docRef.setData(updatedData) { error in
+                if let error = error {
+                    completion(.failure(error))
+                } else {
+                    completion(.success(()))
+                }
             }
         }
     }
+
 }
