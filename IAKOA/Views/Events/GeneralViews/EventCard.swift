@@ -1,18 +1,10 @@
-//
-//  EventCard.swift
-//  IAKOA
-//
-//  Created by Adrien V on 26/06/2025.
-//
-
-
 import SwiftUI
 
 struct EventCard: View {
     let event: Event
     let isLoggedIn: Bool
     let isCreator: Bool
-    let isFavorite: Bool
+    let isFavorite: Bool          // <-- true si cet événement est dans les favoris
     let onFavoriteToggle: () -> Void
     let onTap: () -> Void
 
@@ -34,7 +26,6 @@ struct EventCard: View {
                     }
                 }
                 if !isCreator && isLoggedIn {
-                    
                     HStack {
                         Spacer()
                         Button(action: onFavoriteToggle) {

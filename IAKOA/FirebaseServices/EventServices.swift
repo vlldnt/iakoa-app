@@ -148,14 +148,11 @@ struct EventServices {
             }
 
             if eventIDs.contains(eventID) {
-                // Retirer si déjà favori
                 eventIDs.removeAll { $0 == eventID }
             } else {
-                // Ajouter si pas encore favori
                 eventIDs.append(eventID)
             }
 
-            // Mise à jour ou création du document
             let updatedData: [String: Any] = [
                 "userID": userID,
                 "eventIDs": eventIDs
@@ -170,5 +167,4 @@ struct EventServices {
             }
         }
     }
-
 }

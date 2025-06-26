@@ -13,6 +13,7 @@ struct User: Identifiable, Codable {
     var youtubeLink: String = ""
     var website: String = ""
     var isCreator: Bool = false
+    var favorites: [String] = []
     
     // Standard initializer to create an User instance manually
     init(id: String,
@@ -23,7 +24,8 @@ struct User: Identifiable, Codable {
          xLink: String = "",
          youtubeLink: String = "",
          website: String = "",
-         isCreator: Bool = false) {
+         isCreator: Bool = false,
+         favorites: [String] = []) {
         self.id = id
         self.name = name
         self.email = email
@@ -33,6 +35,7 @@ struct User: Identifiable, Codable {
         self.youtubeLink = youtubeLink
         self.website = website
         self.isCreator = isCreator
+        self.favorites = favorites
     }
     
     init?(document: DocumentSnapshot) {
@@ -49,6 +52,7 @@ struct User: Identifiable, Codable {
         self.youtubeLink = data["youtubeLink"] as? String ?? ""
         self.website = data["website"] as? String ?? ""
         self.isCreator = data["isCreator"] as? Bool ?? false
+        self.favorites = data["favorites"] as? [String] ?? []
     }
 
     
@@ -62,7 +66,8 @@ struct User: Identifiable, Codable {
             "xLink": xLink,
             "youtubeLink": youtubeLink,
             "website": website,
-            "isCreator": isCreator
+            "isCreator": isCreator,
+            "favorites": favorites
         ]
     }
 }

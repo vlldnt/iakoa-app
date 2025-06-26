@@ -60,13 +60,60 @@ struct UserServices {
     
     
     static func updateUserProfile(user: User, completion: @escaping (Result<Void, Error>) -> Void) {
-            let db = Firestore.firestore()
-            db.collection("users").document(user.id).setData(user.toDictonary(), merge: true) { error in
-                if let error = error {
-                    completion(.failure(error))
-                } else {
-                    completion(.success(()))
-                }
+        let db = Firestore.firestore()
+        db.collection("users").document(user.id).setData(user.toDictonary(), merge: true) { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
             }
         }
+    }
+    
+    static func toggleFavorite(eventID: String, isFavorite: Bool, completion: ((Error?) -> Void)? = nil) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            completion?(NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Utilisateur non connecté"]))
+            return
+        }
+        let db = Firestore.firestore()
+        let userRef = db.collection("users").document(userID)
+        let update: [String: Any] = [
+            "favorites": isFavorite
+            ? FieldValue.arrayRemove([eventID])
+            : FieldValue.arrayUnion([eventID])
+        ]
+        userRef.updateData(update, completion: completion)
+    }
+    
+    static func showFavorites(completion: @escaping (Result<[String], Error>) -> Void) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            return completion(.failure(NSError(domain: "Auth", code: 401, userInfo: [NSLocalizedDescriptionKey: "Utilisateur non connecté"])))
+        }
+        let db = Firestore.firestore()
+        db.collection("users").document(userID).getDocument { snapshot, error in
+            if let error = error {
+                return completion(.failure(error))
+            }
+
+            let favorites = snapshot?.data()?["favorites"] as? [String] ?? []
+            completion(.success(favorites))
+        }
+    }
+    
+    static func removeFavorite(eventID: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            completion(.failure(NSError(domain: "NoUser", code: 0)))
+            return
+        }
+        let docRef = Firestore.firestore().collection("users").document(userID)
+        docRef.updateData([
+            "favorites": FieldValue.arrayRemove([eventID])
+        ]) { error in
+            if let error = error {
+                completion(.failure(error))
+            } else {
+                completion(.success(()))
+            }
+        }
+    }
 }
