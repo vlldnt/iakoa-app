@@ -36,13 +36,13 @@ struct EventView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 4) {
+            VStack(spacing: 8) {
                 // Searchbar et filtres toujours en haut
                 HStack(spacing: 8) {
                     Image("playstore")
                         .resizable()
-                        .frame(width: 45, height: 50)
-
+                        .frame(height: 50)
+                        .frame(width: 45)
                     TextField("Entrez une ville", text: $searchText)
                         .padding(7)
                         .autocorrectionDisabled(true)
@@ -51,22 +51,25 @@ struct EventView: View {
                                 .stroke(Color.gray.opacity(0.5), lineWidth: 1)
                         )
                         .focused($isSearchFieldFocused)
-                        .onChange(of: searchText) { _, newValue in
-                            if newValue.isEmpty || newValue == "Ma position actuelle" {
-                                selectedCity = nil
-                                fetchEvents()
-                            } else if !newValue.contains("(") {
-                                fetchCitySuggestions(query: newValue)
-                            } else {
-                                citySuggestions = []
-                            }
-                        }
                         .toolbar {
                             ToolbarItemGroup(placement: .keyboard) {
                                 Spacer()
                                 Button("Terminer") {
                                     isSearchFieldFocused = false
                                 }
+                            }
+                        }
+                        .onChange(of: searchText) { _, newValue in
+                            if newValue.isEmpty {
+                                selectedCity = nil
+                                fetchEvents()
+                            } else if newValue == "Ma position actuelle" {
+                                selectedCity = nil
+                                fetchEvents()
+                            } else if !newValue.contains("(") {
+                                fetchCitySuggestions(query: newValue)
+                            } else {
+                                citySuggestions = []
                             }
                         }
 
@@ -90,13 +93,34 @@ struct EventView: View {
                     } label: {
                         Image(systemName: "slider.horizontal.3")
                             .font(.title2)
-                            .padding(6)
                             .background(isSearchExpanded ? Color.blue.opacity(0.15) : Color.clear)
                             .clipShape(Circle())
                     }
+                    .padding(.trailing, 4)
                 }
                 .padding(.horizontal, 25)
 
+                // Suggérer "Ma position actuelle"
+                if searchText.isEmpty || searchText == "Ma position actuelle" {
+                    Button(action: {
+                        searchText = "Ma position actuelle"
+                        selectedCity = nil
+                        citySuggestions = []
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        fetchEvents()
+                    }) {
+                        HStack {
+                            Image(systemName: "location.fill")
+                                .foregroundColor(Color.blueIakoa)
+                            Text("Ma position actuelle")
+                                .foregroundColor(Color.blueIakoa)
+                                .font(.system(size: 16))
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                    }
+                }
 
                 if !citySuggestions.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
@@ -142,7 +166,17 @@ struct EventView: View {
                     } else {
                         LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 20) {
                             ForEach(events) { event in
-                                eventCard(event, isLoggedIn: isLoggedIn)
+                                EventCard(
+                                    event: event,
+                                    isLoggedIn: isLoggedIn,
+                                    isCreator: isCreator,
+                                    isFavorite: favoriteEventIDs.contains(event.id),
+                                    onFavoriteToggle: {
+                                        toggleFavorite(event)
+                                        EventServices.toggleFavorite(event: event)
+                                    },
+                                    onTap: { selectedEvent = event }
+                                )
                             }
                         }
                         .padding()
@@ -168,83 +202,6 @@ struct EventView: View {
             .onAppear {
                 fetchEvents()
             }
-        }
-    }
-
-    private func eventCard(_ event: Event, isLoggedIn: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            ZStack(alignment: .topLeading) {
-                if let firstImageLink = event.imagesLinks.first,
-                   let url = URL(string: firstImageLink), !firstImageLink.isEmpty {
-                    AsyncImage(url: url) { image in
-                        image
-                            .resizable()
-                            .scaledToFill()
-                            .frame(width: 170, height: 130)
-                            .clipped()
-                    } placeholder: {
-                        Color.gray.opacity(0.3)
-                            .frame(width: 170, height: 130)
-                            .cornerRadius(12)
-                    }
-                }
-
-                if isLoggedIn, !isCreator {
-                    Button(action: {
-                        toggleFavorite(event)
-                    }) {
-                        Image(systemName: favoriteEventIDs.contains(event.id) ? "heart.fill" : "heart")
-                            .foregroundColor(favoriteEventIDs.contains(event.id) ? .red : .white)
-                            .padding(8)
-                            .clipShape(Circle())
-                    }
-                    .padding(6)
-                }
-            }
-            .cornerRadius(15)
-            .contentShape(Rectangle())
-
-            Text(event.name)
-                .font(.system(size: 12))
-                .fontWeight(.bold)
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(DateUtils.formattedDates(event.dates))
-                .font(.system(size: 12))
-                .fontWeight(.heavy)
-                .foregroundColor(.blueIakoa)
-                .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
-
-            Text(event.address)
-                .font(.system(size: 8))
-                .lineLimit(2)
-
-            HStack {
-                if event.pricing == 0 {
-                    Text("Gratuit")
-                        .bold()
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.blueIakoa)
-                } else {
-                    (
-                        Text("à partir de: ")
-                            .font(.system(size: 10))
-                            .foregroundColor(.secondary)
-                        + Text(String(format: "%.2f €", event.pricing))
-                            .bold()
-                            .font(.system(size: 12))
-                            .foregroundColor(Color.blueIakoa)
-                    )
-                }
-            }
-        }
-        .frame(maxHeight: 285, alignment: .top)
-        .background(Color(.systemBackground))
-        .onTapGesture {
-            selectedEvent = event
         }
     }
 
@@ -308,36 +265,5 @@ struct EventView: View {
             .sink { cities in
                 self.citySuggestions = Array(cities.prefix(3))
             }
-    }
-}
-
-struct CitySuggestionRow: View {
-    let city: City
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(city.nom)
-                        .bold()
-                        .foregroundColor(Color.blueIakoa)
-                        .font(.system(size: 16))
-
-                    Text("(\(city.codesPostaux.first ?? ""))")
-                        .foregroundColor(Color.blueIakoa)
-                        .font(.system(size: 14))
-                        .italic()
-                }
-                .padding(5)
-                .padding(.horizontal, 65)
-
-                Divider()
-                    .background(Color(.systemGray2))
-                    .padding(.horizontal, 65)
-            }
-            .background(Color.white)
-        }
-        .buttonStyle(.plain)
     }
 }

@@ -22,7 +22,7 @@ struct ContentView: View {
                     EventsManagerView()
                 } else {
                     if isLoggedIn {
-                        Text("Favoris")
+                        UserEventsFavoriteView()
                     } else {
                         Button("Veuillez vous connecter") {
                             selectedTab = 3

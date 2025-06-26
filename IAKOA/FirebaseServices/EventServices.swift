@@ -124,5 +124,41 @@ struct EventServices {
         
         deleteEvent(id: event.id, completion: completion)
     }
+    
+    static func toggleFavorite(event: Event) {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        let db = Firestore.firestore()
+        let userFavoritesRef = db.collection("userfavorites").document(userId)
 
+        userFavoritesRef.getDocument { document, error in
+            if let document = document, document.exists {
+                var eventIDs = document.data()?["eventIDs"] as? [String] ?? []
+                if let index = eventIDs.firstIndex(of: event.id) {
+                    eventIDs.remove(at: index)
+                } else {
+                    eventIDs.append(event.id)
+                }
+                userFavoritesRef.setData(["userID": userId, "eventIDs": eventIDs], merge: true)
+            } else {
+                userFavoritesRef.setData(["userID": userId, "eventIDs": [event.id]])
+            }
+        }
+    }
+    static func removeFromFavorites(eventID: String, completion: ((Result<Void, Error>) -> Void)? = nil) {
+        guard let userId = Auth.auth().currentUser?.uid else {
+            completion?(.failure(NSError(domain: "NoUser", code: 0)))
+            return
+        }
+
+        let userFavoritesRef = Firestore.firestore().collection("userfavorites").document(userId)
+        userFavoritesRef.updateData([
+            "eventIDs": FieldValue.arrayRemove([eventID])
+        ]) { error in
+            if let error = error {
+                completion?(.failure(error))
+            } else {
+                completion?(.success(()))
+            }
+        }
+    }
 }
