@@ -203,59 +203,44 @@ struct EventView: View {
             }
         }
     }
-    
+
+    // 1. Récupérer les favoris de l'utilisateur
     private func fetchEvents() {
         isLoading = true
         errorMessage = nil
         events = []
 
-        // 1. Récupérer les favoris de l'utilisateur
-        UserServices.showFavorites { result in
-            switch result {
-            case .success(let favorites):
-                DispatchQueue.main.async {
-                    favoriteEventIDs = Set(favorites)
-                }
+        let coordinates: CLLocationCoordinate2D?
+        if searchText == "Ma position actuelle" {
+            coordinates = locationManager.userLocation
+        } else {
+            coordinates = selectedCity?.coordinates
+        }
 
-                // 2. Une fois les favoris chargés, fetch des événements
-                let coordinates: CLLocationCoordinate2D?
-
-                if searchText == "Ma position actuelle" {
-                    coordinates = locationManager.userLocation
-                } else {
-                    coordinates = selectedCity?.coordinates
-                }
-
-                EventServices.fetchEvents(
-                    searchText: "",
-                    cityCoordinates: coordinates,
-                    radiusInKm: searchRadius,
-                    selectedCategories: selectedCategories,
-                    showOnlyFree: showOnlyFreeEvents
-                ) { result in
+        // Si l'utilisateur est connecté, on charge les favoris
+        if isLoggedIn {
+            UserServices.showFavorites { result in
+                switch result {
+                case .success(let favorites):
                     DispatchQueue.main.async {
-                        isLoading = false
-                        switch result {
-                        case .success(let fetchedEvents):
-                            self.events = fetchedEvents
-                            self.errorMessage = nil
-                        case .failure(let error):
-                            self.errorMessage = error.localizedDescription
-                        }
+                        favoriteEventIDs = Set(favorites)
+                    }
+                case .failure(let error):
+                    DispatchQueue.main.async {
+                        errorMessage = "Erreur récupération favoris: \(error.localizedDescription)"
+                        favoriteEventIDs = []
                     }
                 }
 
-            case .failure(let error):
-                // En cas d'erreur sur favoris, on peut quand même fetch les événements sans favoris
-                DispatchQueue.main.async {
-                    favoriteEventIDs = []
-                    errorMessage = "Erreur récupération favoris: \(error.localizedDescription)"
-                }
-                isLoading = false
+                // Ensuite, on charge les événements
+                fetchEventsFromService(coordinates: coordinates)
             }
+        } else {
+            // Non connecté : pas de favoris, mais on continue
+            favoriteEventIDs = []
+            fetchEventsFromService(coordinates: coordinates)
         }
     }
-
 
     private func fetchCitySuggestions(query: String) {
         guard query.count >= 2 else {
@@ -274,24 +259,45 @@ struct EventView: View {
             .replaceError(with: [])
             .receive(on: DispatchQueue.main)
             .sink { cities in
-                self.citySuggestions = Array(cities.prefix(3))
+                citySuggestions = Array(cities.prefix(3))
             }
     }
     
     private func toggleFavorite(_ event: Event) {
-            let isCurrentlyFavorite = favoriteEventIDs.contains(event.id)
-            UserServices.toggleFavorite(eventID: event.id, isFavorite: isCurrentlyFavorite) { error in
-                if error == nil {
-                    DispatchQueue.main.async {
-                        if isCurrentlyFavorite {
-                            favoriteEventIDs.remove(event.id)
-                        } else {
-                            favoriteEventIDs.insert(event.id)
-                        }
+        let isCurrentlyFavorite = favoriteEventIDs.contains(event.id)
+        UserServices.toggleFavorite(eventID: event.id, isFavorite: isCurrentlyFavorite) { error in
+            if error == nil {
+                DispatchQueue.main.async {
+                    if isCurrentlyFavorite {
+                        favoriteEventIDs.remove(event.id)
+                    } else {
+                        favoriteEventIDs.insert(event.id)
                     }
-                } else {
-                    // Gère l’erreur si besoin
+                }
+            } else {
+                // Gère l’erreur si besoin
+            }
+        }
+    }
+    
+    private func fetchEventsFromService(coordinates: CLLocationCoordinate2D?) {
+        EventServices.fetchEvents(
+            searchText: searchText,
+            cityCoordinates: coordinates,
+            radiusInKm: searchRadius,
+            selectedCategories: selectedCategories,
+            showOnlyFree: showOnlyFreeEvents
+        ) { result in
+            DispatchQueue.main.async {
+                isLoading = false
+                switch result {
+                case .success(let fetchedEvents):
+                    events = fetchedEvents
+                    errorMessage = nil
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
                 }
             }
         }
+    }
 }
