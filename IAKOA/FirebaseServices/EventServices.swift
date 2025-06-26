@@ -34,7 +34,13 @@ struct EventServices {
             let allEvents = snapshot?.documents.compactMap { Event(document: $0) } ?? []
 
             let filtered = allEvents.filter { event in
-                let matchesText = searchText.isEmpty || event.name.localizedCaseInsensitiveContains(searchText)
+                // ✅ Si une ville est sélectionnée (donc coordonnées renseignées), on ignore le filtre sur le nom
+                let matchesText: Bool
+                if cityCoordinates != nil {
+                    matchesText = true
+                } else {
+                    matchesText = searchText.isEmpty || event.name.localizedCaseInsensitiveContains(searchText)
+                }
 
                 let matchesDistance: Bool
                 if let center = cityCoordinates,
@@ -53,6 +59,7 @@ struct EventServices {
             completion(.success(filtered))
         }
     }
+
 
     static func addEvent(_ event: Event, completion: @escaping (Result<Void, Error>) -> Void) {
         let db = Firestore.firestore()

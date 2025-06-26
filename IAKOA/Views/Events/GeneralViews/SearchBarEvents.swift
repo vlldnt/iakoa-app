@@ -16,7 +16,7 @@ struct SearchBarEvents: View {
                     .font(.headline)
 
                 HStack {
-                    Slider(value: $searchRadius, in: 1...100, step: 1)
+                    Slider(value: $searchRadius, in: 0...100, step: 10)
                     Text("\(Int(searchRadius)) km")
                         .frame(width: 50, alignment: .trailing)
                 }
