@@ -4,41 +4,50 @@ import FirebaseFirestore
 import CoreLocation
 
 struct MapView: View {
-    @State private var cameraPosition = MapCameraPosition.region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 43.6119, longitude: 3.8772), // Montpellier
-            span: MKCoordinateSpan(latitudeDelta: 0.1, longitudeDelta: 0.1)
-        )
-    )
     @State private var events: [Event] = []
     @State private var isLoading = true
-    @StateObject private var locationManager = LocationManager()
-    @State private var selectedEvent: Event? = nil   // Pour la sheet
+    @StateObject private var locationManager = LocationManagerTool()
+    @State private var selectedEvent: Event? = nil
+    @State private var cameraPosition: MapCameraPosition = .automatic
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             Map(position: $cameraPosition) {
+                UserAnnotation()
                 ForEach(events.filter { $0.location != nil }) { event in
                     Annotation(event.name, coordinate: event.location!) {
                         Button(action: {
                             selectedEvent = event
                         }) {
                             Image(systemName: "mappin")
-                                .font(.system(size: 32))
-                                .foregroundColor(.red)
+                                .font(.system(size: 38))
+                                .foregroundColor(
+                                    Color(
+                                        hex: EventCategories.dict[event.categories.first ?? ""]?.color ?? "#FF0000"
+                                    )
+                                )
                         }
                     }
                 }
             }
             .edgesIgnoringSafeArea(.top)
-            
+            .onChange(of: locationManager.userLocation) { _, coord in
+                if let coord = coord {
+                    let region = MKCoordinateRegion(
+                        center: coord,
+                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                    )
+                    cameraPosition = .region(region)
+                }
+            }
+
             if isLoading {
-                ProgressView("Loading events...")
+                ProgressView("Chargement des événements...")
                     .padding()
                     .background(.ultraThinMaterial)
                     .cornerRadius(10)
             }
-            
+
             Button(action: centerOnUser) {
                 Image(systemName: "location.fill")
                     .font(.title2)
@@ -51,7 +60,6 @@ struct MapView: View {
         }
         .onAppear {
             fetchEvents()
-            locationManager.requestAuthorization()
         }
         .sheet(item: $selectedEvent) { event in
             EventDetailView(event: event) {
@@ -59,55 +67,38 @@ struct MapView: View {
             }
         }
     }
-    
+
     func fetchEvents() {
+        isLoading = true
         let db = Firestore.firestore()
         db.collection("events").getDocuments { snapshot, error in
-            if let error = error {
-                print("Firestore fetch error: \(error.localizedDescription)")
-                isLoading = false
-                return
-            }
-            guard let documents = snapshot?.documents else {
-                print("No events found")
-                isLoading = false
-                return
-            }
-            let fetchedEvents = documents.compactMap { Event(document: $0) }
             DispatchQueue.main.async {
-                self.events = fetchedEvents
-                self.isLoading = false
+                if let error = error {
+                    print("Firestore fetch error: \(error.localizedDescription)")
+                    isLoading = false
+                    return
+                }
+                guard let documents = snapshot?.documents else {
+                    print("No events found")
+                    isLoading = false
+                    return
+                }
+                events = documents.compactMap { Event(document: $0) }
+                isLoading = false
             }
         }
     }
-    
-    func centerOnUser() {
-        if let userLocation = locationManager.lastLocation {
-            cameraPosition = .region(MKCoordinateRegion(
-                center: userLocation.coordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-            ))
+
+    private func centerOnUser() {
+        if let location = locationManager.userLocation {
+            withAnimation {
+                cameraPosition = .region(
+                    MKCoordinateRegion(
+                        center: location,
+                        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                    )
+                )
+            }
         }
-    }
-}
-
-// Gestionnaire de localisation simple
-class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
-    private let manager = CLLocationManager()
-    @Published var lastLocation: CLLocation?
-
-    override init() {
-        super.init()
-        manager.delegate = self
-        manager.desiredAccuracy = kCLLocationAccuracyBest
-    }
-
-    func requestAuthorization() {
-        manager.requestWhenInUseAuthorization()
-        manager.startUpdatingLocation()
-    }
-
-    func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        lastLocation = locations.last
     }
 }
