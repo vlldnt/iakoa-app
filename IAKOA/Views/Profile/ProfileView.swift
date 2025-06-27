@@ -24,6 +24,7 @@ struct ProfileView: View {
     @State private var shouldLogout = false
     @State private var showChangePasswordView = false
     @State private var showEditProfile = false
+    @State private var showCreatorConfirmation = false
 
     var body: some View {
         NavigationView {
@@ -75,6 +76,13 @@ struct ProfileView: View {
                                 .padding(.top, 10)
                         }
                     }
+                }
+                
+                Button("Vérifier mon compte créateur") {
+                    showCreatorConfirmation = true
+                }
+                .sheet(isPresented: $showCreatorConfirmation) {
+                    CreatorConfirmationView()
                 }
 
                 Section(header: Text("Paramètres du compte")) {
