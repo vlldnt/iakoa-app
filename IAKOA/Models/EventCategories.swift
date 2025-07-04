@@ -1,7 +1,6 @@
 struct EventCategories {
     static let dict: [String: (label: String, icon: String, color: String)] = [
         
-        // 🎵 Culture & Spectacle
         "concert": ("Concert", "music.mic", "#D64545"),
         "cinéma": ("Cinéma", "film.fill", "#D38D5F"),
         "théâtre": ("Théâtre", "theatermasks.fill", "#3E5569"),
@@ -16,7 +15,6 @@ struct EventCategories {
         "musée": ("Musée", "building.columns.fill", "#4ECDC4"),
         "lancementdelivre": ("Lancement de livre", "book", "#3E5569"),
         
-        // 👨‍👩‍👧‍👦 Famille & Loisirs
         "enfants": ("Enfants", "figure.2.and.child.holdinghands", "#F5D068"),
         "jeux": ("Jeux", "puzzlepiece.fill", "#5D9CEC"),
         "jeuxvidéo": ("Jeux vidéo", "gamecontroller.fill", "#3A7CA5"),
@@ -27,14 +25,12 @@ struct EventCategories {
         "coursdecuisine": ("Cours de cuisine", "frying.pan.fill", "#C07E52"),
         "dégustation": ("Dégustation", "cup.and.saucer.fill", "#F4A261"),
         
-        // 🌇 Sorties & Vie Nocturne
         "soirée": ("Soirée", "moon.stars.fill", "#7D5BA6"),
         "bar": ("Bar", "wineglass.fill", "#8A6BA1"),
         "festival": ("Festival", "sparkles", "#4A89DC"),
         "fêtelocale": ("Fête locale", "balloon.fill", "#F4A261"),
         "feria": ("Féria", "flag.fill", "#E63946"),
         
-        // 🌿 Nature & Activités Extérieures
         "nature": ("Nature", "leaf.fill", "#3A8F5D"),
         "randonnée": ("Randonnée", "figure.hiking", "#4ECDC4"),
         "trail": ("Trail", "figure.run", "#43AA8B"),
@@ -44,7 +40,6 @@ struct EventCategories {
         "nautisme": ("Nautisme", "sailboat.fill", "#457B9D"),
         "aventure": ("Aventure", "map.fill", "#E76F51"),
         
-        // 🧘 Bien-être & Développement personnel
         "yoga": ("Yoga", "figure.yoga", "#8A6BA1"),
         "méditation": ("Méditation", "figure.yoga", "#A8DADC"),
         "bienêtre": ("Bien-être", "heart.text.square.fill", "#A8DADC"),

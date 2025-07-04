@@ -93,8 +93,6 @@ struct LoginView: View {
             
             GoogleSignInButtonView(isLoggedIn: $isLoggedIn)
             
-            // AppleSignInButtonView(isLoggedIn: $isLoggedIn)   ---> Besoin d'un accés Apple Developer pour l'utiliser
-
         }
         .padding()
         .alert(isPresented: $showAlert) {

@@ -14,6 +14,7 @@ struct AuthView: View {
                 .renderingMode(.template)
                 .frame(width: 280, height: 80)
                 .foregroundStyle(Color.blueIakoa)
+                .padding(.bottom, 9)
 
             ZStack {
                 GeometryReader { geo in
@@ -57,7 +58,7 @@ struct AuthView: View {
 
             Spacer()
         }
-        .padding(30)
+        .padding(15)
         .padding(.top, 30)
     }
 
@@ -78,3 +79,7 @@ struct AuthView: View {
         }
     }
 }
+
+#Preview {
+    AuthView(isLoggedIn: .constant(false)
+)}

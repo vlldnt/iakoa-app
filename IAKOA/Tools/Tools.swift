@@ -2,6 +2,7 @@ import SwiftUI
 import Foundation
 import CoreLocation
 
+/// Extension to initialize a Color from a hex string
 extension Color {
     init(hex: String) {
         let scanner = Scanner(string: hex)
@@ -20,7 +21,7 @@ extension Color {
     static let blueIakoa = Color(hex: "#2397FF")
 }
 
-
+/// Extension to calculate the height of a string with a constrained width and font
 extension String {
     func height(withConstrainedWidth width: CGFloat, font: UIFont) -> CGFloat {
         let constraintRect = CGSize(width: width, height: .greatestFiniteMagnitude)
@@ -34,6 +35,7 @@ extension String {
     }
 }
 
+/// UIViewRepresentable to provide a zoomable scroll view for SwiftUI content
 struct ZoomableScrollView<Content: View>: UIViewRepresentable {
     var content: Content
     
@@ -56,7 +58,7 @@ struct ZoomableScrollView<Content: View>: UIViewRepresentable {
         
         scrollView.addSubview(hostedView)
         
-        // Contraintes : on attache le hostedView aux bords, mais on NE FORCE PAS la largeur/hauteur au scrollView
+        /// Attach hostedView to scrollView edges without forcing width/height
         NSLayoutConstraint.activate([
             hostedView.topAnchor.constraint(equalTo: scrollView.contentLayoutGuide.topAnchor),
             hostedView.bottomAnchor.constraint(equalTo: scrollView.contentLayoutGuide.bottomAnchor),
@@ -70,13 +72,14 @@ struct ZoomableScrollView<Content: View>: UIViewRepresentable {
     }
     
     func updateUIView(_ uiView: UIScrollView, context: Context) {
-        // Pas d'update spécifique ici
+        /// No specific update needed
     }
     
     func makeCoordinator() -> Coordinator {
         Coordinator()
     }
     
+    /// Coordinator to handle zooming
     class Coordinator: NSObject, UIScrollViewDelegate {
         var hostedView: UIView?
         
@@ -86,8 +89,7 @@ struct ZoomableScrollView<Content: View>: UIViewRepresentable {
     }
 }
 
-
-
+/// Extension to check if a date is in the past or in the future/today
 extension Date {
     var isInPast: Bool {
         self < Calendar.current.startOfDay(for: Date())
@@ -98,7 +100,7 @@ extension Date {
     }
 }
 
-
+/// Utility struct to format a list of dates as a string
 struct DateUtils {
     static func formattedDates(_ dates: [Date]) -> String {
         let sorted = dates.sorted()
@@ -129,6 +131,7 @@ struct DateUtils {
     }
 }
 
+/// Utility struct to get the status of an event from its dates
 struct EventStatusUtils {
     static func eventStatus(from dates: [Date]) -> String {
         let now = Date()
@@ -166,6 +169,7 @@ struct EventStatusUtils {
     }
 }
 
+/// SwiftUI view to display a full screen image with zoom and tap to dismiss
 struct FullScreenImageView: View {
     let imageURL: URL
     @Environment(\.dismiss) var dismiss
@@ -194,13 +198,15 @@ struct FullScreenImageView: View {
         }
     }
 }
+
+/// Extension to hide the keyboard from any SwiftUI view
 extension View {
     func hideKeyboard() {
         UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
     }
 }
 
-
+/// Function to compare two optional CLLocationCoordinate2D for equality
 func coordinatesEqual(_ lhs: CLLocationCoordinate2D?, _ rhs: CLLocationCoordinate2D?) -> Bool {
     switch (lhs, rhs) {
     case (nil, nil): return true

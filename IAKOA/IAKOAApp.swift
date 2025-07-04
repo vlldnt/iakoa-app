@@ -29,7 +29,7 @@ struct IAKOAApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashView()
         }
     }
 }

@@ -10,6 +10,13 @@ struct CreateView: View {
     
     var body: some View {
         VStack(spacing: 20) {
+            
+            Image("logo-iakoa")
+                .resizable()
+                .renderingMode(.template)
+                .frame(width: 280, height: 80)
+                .foregroundStyle(Color.blueIakoa)
+            
             if let user = userInfo {
                 Text("👋 \(user.name)")
                     .font(.title2)

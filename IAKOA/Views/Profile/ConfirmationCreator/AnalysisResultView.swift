@@ -7,7 +7,7 @@ struct AnalysisResultView: View {
     @State private var companyName: String?
     @State private var companyAddress: String?
     @State private var showConfirmation = false
-    @State private var apiKey: String = "e2a38469-7358-4b8f-a384-697358db8f26"
+    @State private var apiKey: String = "f6622533-ebac-4093-a225-33ebac0093e1"
 
     var body: some View {
         VStack(spacing: 20) {
@@ -28,13 +28,19 @@ struct AnalysisResultView: View {
                     .foregroundColor(.green)
                     .bold()
 
-                if companyName == nil {
-                    ProgressView("Chargement des infos d’entreprise...")
+                if companyName == nil && companyName != "❌ SIREN introuvable" {
+                    ProgressView("Vérification dans le registre national...")
                         .task {
                             let info = await CreatorConfirmationFunctions.fetchCompanyInfo(siren: enteredSiren, apiKey: apiKey)
-                            companyName = info.denomination
-                            companyAddress = info.address
-                            showConfirmation = true
+                            if let denomination = info.denomination, let address = info.address {
+                                companyName = denomination
+                                companyAddress = address
+                                showConfirmation = true
+                            } else {
+                                companyName = "❌ SIREN introuvable"
+                                companyAddress = nil
+                                showConfirmation = false
+                            }
                         }
                 }
 
@@ -60,6 +66,11 @@ struct AnalysisResultView: View {
                     Text(companyName ?? "")
                         .foregroundColor(.green)
                         .font(.title2)
+                        .bold()
+                }
+                if companyName == "❌ SIREN introuvable" {
+                    Text("❌ SIREN non trouvé dans le registre national.")
+                        .foregroundColor(.red)
                         .bold()
                 }
             } else {

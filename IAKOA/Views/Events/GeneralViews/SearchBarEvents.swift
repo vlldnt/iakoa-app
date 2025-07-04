@@ -16,7 +16,7 @@ struct SearchBarEvents: View {
                     .font(.headline)
 
                 HStack {
-                    Slider(value: $searchRadius, in: 0...100, step: 10)
+                    Slider(value: $searchRadius, in: 10...100, step: 10)
                     Text("\(Int(searchRadius)) km")
                         .frame(width: 50, alignment: .trailing)
                 }
@@ -117,7 +117,7 @@ struct SearchBarEvents: View {
 
                 Button("Supprimer les filtres") {
                     searchText = ""
-                    searchRadius = 20
+                    searchRadius = 30
                     selectedCategories = []
                     withAnimation {
                         isSearchExpanded = false
