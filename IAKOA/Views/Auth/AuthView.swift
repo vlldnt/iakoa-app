@@ -56,10 +56,13 @@ struct AuthView: View {
             }
             .animation(.easeInOut(duration: 0.2), value: selectedTab)
 
-            Spacer()
         }
         .padding(15)
         .padding(.top, 30)
+        .safeAreaInset(edge: .top) {
+            Color.clear.frame(height: 0)
+        }
+        .ignoresSafeArea(.keyboard)
     }
 
     struct TabButton: View {
@@ -79,7 +82,3 @@ struct AuthView: View {
         }
     }
 }
-
-#Preview {
-    AuthView(isLoggedIn: .constant(false)
-)}

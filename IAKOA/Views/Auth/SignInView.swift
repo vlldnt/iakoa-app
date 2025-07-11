@@ -26,6 +26,7 @@ struct SignInView: View {
                     .cornerRadius(8)
                     .autocapitalization(.none)
                     .keyboardType(.emailAddress)
+                    .textContentType(.emailAddress)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(isValidEmail(email) ? Color.green : Color.clear, lineWidth: 2)
@@ -36,6 +37,7 @@ struct SignInView: View {
                     .frame(height: 43)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
+                    .textContentType(.password)
                     .overlay(
                         RoundedRectangle(cornerRadius: 8)
                             .stroke(isValidPassword ? Color.green : Color.clear, lineWidth: 2)
@@ -109,6 +111,7 @@ struct SignInView: View {
                 }
             )
         }
+        .ignoresSafeArea(.keyboard)
     }
 
     // MARK: - Validation

@@ -4,7 +4,6 @@ struct LoginView: View {
     
     @Binding var isLoggedIn: Bool
     
-    
     @StateObject private var googleAuthManager = GoogleAuthManager.shared
 
     @State private var selectedTab: AuthTab = .login
@@ -19,18 +18,21 @@ struct LoginView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-
             Text("Vous avez déjà un compte ?")
                 .fontWeight(.regular)
 
             Group {
                 TextField("Email", text: $email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .autocapitalization(.none)
                     .padding()
                     .frame(height: 42)
                     .background(Color.gray.opacity(0.2))
                     .cornerRadius(8)
 
                 SecureField("Mot de passe", text: $password)
+                    .textContentType(.password)
                     .padding()
                     .frame(height: 42)
                     .background(Color.gray.opacity(0.2))
@@ -95,6 +97,7 @@ struct LoginView: View {
             
         }
         .padding()
+        .ignoresSafeArea(.keyboard)
         .alert(isPresented: $showAlert) {
             Alert(
                 title: Text("Notification"),

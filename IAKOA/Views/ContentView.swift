@@ -8,14 +8,26 @@ struct ContentView: View {
     @State private var isLoggedIn = false
     @State private var isCreator = false
 
+    @State private var searchText: String = ""
+    @State private var selectedCity: City? = nil
+    @State private var selectedCategories: Set<String> = []
+    @State private var searchRadius: Double = 30
+
     var body: some View {
         TabView(selection: $selectedTab) {
-            EventView(isLoggedIn: $isLoggedIn, isCreator: $isCreator)
-                .tabItem {
-                    Image(systemName: "bubbles.and.sparkles")
-                    Text("Évènements")
-                }
-                .tag(0)
+            EventView(
+                isLoggedIn: $isLoggedIn,
+                isCreator: $isCreator,
+                searchText: $searchText,
+                selectedCity: $selectedCity,
+                selectedCategories: $selectedCategories,
+                searchRadius: $searchRadius
+            )
+            .tabItem {
+                Image(systemName: "bubbles.and.sparkles")
+                Text("Évènements")
+            }
+            .tag(0)
             
             Group {
                 if isCreator {
@@ -52,7 +64,12 @@ struct ContentView: View {
                 if isCreator {
                     CreateView(selectedTab: $selectedTab)
                 } else {
-                    MapView()
+                    MapView(
+                        searchText: $searchText,
+                        selectedCity: $selectedCity,
+                        selectedCategories: $selectedCategories,
+                        searchRadius: $searchRadius
+                    )
                 }
             }
             .tabItem {
@@ -86,6 +103,16 @@ struct ContentView: View {
             selectedTab = 0
             fetchUserState()
         }
+        .onChange(of: selectedTab) { _, newTab in
+            if newTab == 0 {
+                // Refresh EventsView when switching to it
+                // Assuming fetchEvents is accessible via a shared method or notification
+                NotificationCenter.default.post(name: .refreshEventsView, object: nil)
+            } else if newTab == 2 {
+                // Refresh MapView when switching to it
+                NotificationCenter.default.post(name: .refreshMapView, object: nil)
+            }
+        }
     }
 
     private func fetchUserState() {
@@ -110,6 +137,11 @@ struct ContentView: View {
             }
         }
     }
+}
+
+extension Notification.Name {
+    static let refreshEventsView = Notification.Name("refreshEventsView")
+    static let refreshMapView = Notification.Name("refreshMapView")
 }
 
 

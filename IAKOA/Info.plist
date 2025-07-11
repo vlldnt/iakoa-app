@@ -33,8 +33,8 @@
 	<true/>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
-		<string>google</string>
-		<string>com-google-gidgoogle</string>
+		<string>youtube</string>
+		<string>fb</string>
 	</array>
 	<key>NSAppleIDUsageDescription</key>
 	<string>Connexion sécurisée avec votre identifiant Apple</string>
@@ -44,15 +44,5 @@
 	<string>iakoa-app-587e0</string>
 	<key>STORAGE_BUCKET</key>
 	<string>iakoa-app-587e0.appspot.com</string>
-	<key>LSApplicationQueriesSchemes</key>
-	<array>
-		<string>youtube</string>
-		<string>fb</string>
-	</array>
-	<key>UISupportedInterfaceOrientations</key>
-	<array>
-    	<string>UIInterfaceOrientationPortrait</string>
-	</array>
-
 </dict>
 </plist>

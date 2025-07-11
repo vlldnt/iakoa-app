@@ -5,22 +5,22 @@ import CoreLocation
 import Combine
 
 struct MapView: View {
+    @Binding var searchText: String
+    @Binding var selectedCity: City?
+    @Binding var selectedCategories: Set<String>
+    @Binding var searchRadius: Double
+
     @State private var events: [Event] = []
     @State private var isLoading = true
     @StateObject private var locationManager = LocationManagerTool()
     @State private var selectedEvent: Event? = nil
     @State private var cameraPosition: MapCameraPosition = .automatic
-    @State private var selectedCategories: Set<String> = []
-    @State private var searchRadius: Double = 30
     @State private var isSearchExpanded = false
-    @State private var searchText: String = ""
     @State private var citySuggestions: [City] = []
-    @State private var selectedCity: City? = nil
     @State private var cancellable: AnyCancellable?
     @FocusState private var isSearchFieldFocused: Bool
     @State private var isFirstAppear = true
 
-    // List of available categories for filters
     var availableCategories: [(key: String, label: String, icon: String, color: String)] {
         EventCategories.dict.map {
             (key: $0.key,
@@ -33,17 +33,16 @@ struct MapView: View {
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
-            // Main map view with user and event annotations
+            // 📍 Map
             Map(position: $cameraPosition) {
                 UserAnnotation()
-                let centerCoord = selectedCity?.coordinates ?? locationManager.userLocation
-                if let userCoord = centerCoord {
-                    // Draw search radius circle
-                    MapCircle(center: userCoord, radius: searchRadius * 1000)
+
+                if let centerCoord = selectedCity?.coordinates ?? locationManager.userLocation {
+                    MapCircle(center: centerCoord, radius: searchRadius * 1000)
                         .foregroundStyle(.blue.opacity(0.03))
                         .stroke(.blue.opacity(0.6), lineWidth: 1)
                 }
-                // Show event pins
+
                 ForEach(events.filter { $0.location != nil }) { event in
                     Annotation(event.name, coordinate: event.location!) {
                         Button(action: {
@@ -56,25 +55,19 @@ struct MapView: View {
                     }
                 }
             }
-            .edgesIgnoringSafeArea(.top)
             .onAppear {
-                // On first appear, fetch events near user
-                if isFirstAppear {
-                    selectedCity = nil
-                    searchText = ""
-                    centerOnCityOrUser()
-                    fetchEvents(useUserLocation: true)
-                    isFirstAppear = false
-                } else {
-                    centerOnCityOrUser()
-                }
+                locationManager.requestLocation()
+                centerOnCityOrUser()
+                fetchEvents()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .refreshMapView)) { _ in
+                fetchEvents()
             }
 
-            // Top overlay: city search bar and suggestions
+            // 🔍 Search bar and suggestions
             VStack(spacing: 0) {
                 VStack(spacing: 0) {
                     HStack {
-                        // City search text field
                         TextField("Entrez une ville", text: $searchText)
                             .padding(7)
                             .background(RoundedRectangle(cornerRadius: 8).fill(Color.white.opacity(0.9)))
@@ -102,11 +95,12 @@ struct MapView: View {
                             .toolbar {
                                 ToolbarItemGroup(placement: .keyboard) {
                                     Spacer()
-                                    Button("Terminer") { isSearchFieldFocused = false }
+                                    Button("Terminer") {
+                                        isSearchFieldFocused = false
+                                    }
                                 }
                             }
 
-                        // Clear search button
                         if !searchText.isEmpty {
                             Button(action: {
                                 searchText = ""
@@ -117,7 +111,7 @@ struct MapView: View {
                                 Image(systemName: "xmark.circle.fill")
                                     .resizable()
                                     .frame(width: 28, height: 28)
-                                    .foregroundColor(.blueIakoa)
+                                    .foregroundColor(.blue)
                                     .padding(4)
                                     .contentShape(Rectangle())
                             }
@@ -128,7 +122,6 @@ struct MapView: View {
                     .padding(.top, 50)
                     .padding(.bottom, 4)
 
-                    // City suggestions dropdown
                     if !citySuggestions.isEmpty {
                         VStack(alignment: .leading, spacing: 0) {
                             ForEach(citySuggestions.prefix(3), id: \.self) { city in
@@ -160,9 +153,8 @@ struct MapView: View {
             }
             .edgesIgnoringSafeArea(.top)
 
-            // Bottom right: filter and location buttons
+            // 🧭 Buttons (filter and location)
             VStack(alignment: .trailing, spacing: 12) {
-                // Open filter sheet
                 Button {
                     withAnimation {
                         isSearchExpanded = true
@@ -175,7 +167,7 @@ struct MapView: View {
                         .clipShape(Circle())
                         .shadow(radius: 3)
                 }
-                // Center on user and fetch nearby events
+
                 Button(action: {
                     selectedCity = nil
                     searchText = ""
@@ -184,6 +176,7 @@ struct MapView: View {
                 }) {
                     Image(systemName: "location.fill")
                         .font(.title2)
+                        .foregroundColor(.blue)
                         .padding()
                         .background(Color.white.opacity(0.8))
                         .clipShape(Circle())
@@ -192,7 +185,7 @@ struct MapView: View {
             }
             .padding()
         }
-        // Filter sheet
+        // 🎛 Filter Sheet
         .sheet(isPresented: $isSearchExpanded) {
             SearchBarEvents(
                 searchText: $searchText,
@@ -208,7 +201,8 @@ struct MapView: View {
             .presentationDetents([.fraction(0.7), .medium])
             .presentationDragIndicator(.visible)
         }
-        // Event detail sheet
+
+        // 📄 Event detail
         .sheet(item: $selectedEvent) { event in
             EventDetailView(event: event) {
                 selectedEvent = nil
@@ -216,7 +210,6 @@ struct MapView: View {
         }
     }
 
-    // Fetch events from Firestore, filter by location and category
     private func fetchEvents(useUserLocation: Bool = false) {
         isLoading = true
         let db = Firestore.firestore()
@@ -227,18 +220,23 @@ struct MapView: View {
                     isLoading = false
                     return
                 }
+
                 guard let documents = snapshot?.documents else {
                     print("No events found")
                     isLoading = false
                     return
                 }
+
                 let allEvents = documents.compactMap { Event(document: $0) }
-                let centerCoord: CLLocationCoordinate2D?
-                if useUserLocation {
-                    centerCoord = locationManager.userLocation
-                } else {
-                    centerCoord = selectedCity?.coordinates ?? locationManager.userLocation
-                }
+
+                let centerCoord: CLLocationCoordinate2D? = {
+                    if useUserLocation {
+                        return locationManager.userLocation
+                    } else {
+                        return selectedCity?.coordinates ?? locationManager.userLocation
+                    }
+                }()
+
                 if let center = centerCoord {
                     events = allEvents.filter { event in
                         guard let loc = event.location else { return false }
@@ -251,12 +249,12 @@ struct MapView: View {
                 } else {
                     events = allEvents
                 }
+
                 isLoading = false
             }
         }
     }
 
-    // Center the map on the selected city or user location
     private func centerOnCityOrUser() {
         if let city = selectedCity {
             withAnimation {
@@ -279,17 +277,18 @@ struct MapView: View {
         }
     }
 
-    // Fetch city suggestions from the French government API
     private func fetchCitySuggestions(query: String) {
         guard query.count >= 2 else {
             citySuggestions = []
             return
         }
+
         let urlString = "https://geo.api.gouv.fr/communes?nom=\(query.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&fields=nom,codesPostaux,centre&boost=population&limit=10"
         guard let url = URL(string: urlString) else { return }
+
         cancellable?.cancel()
         cancellable = URLSession.shared.dataTaskPublisher(for: url)
-            .map { $0.data }
+            .map(\.data)
             .decode(type: [City].self, decoder: JSONDecoder())
             .replaceError(with: [])
             .receive(on: DispatchQueue.main)

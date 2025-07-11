@@ -25,9 +25,14 @@ class LocationManagerTool: NSObject, ObservableObject, CLLocationManagerDelegate
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
         print("Erreur de localisation : \(error.localizedDescription)")
     }
+    
+    func requestLocation() {
+        manager.requestWhenInUseAuthorization()
+        manager.requestLocation()
+    }
 }
 
-
+// Extension pour rendre CLLocationCoordinate2D équatable
 extension CLLocationCoordinate2D: @retroactive Equatable {
     public static func == (lhs: CLLocationCoordinate2D, rhs: CLLocationCoordinate2D) -> Bool {
         lhs.latitude == rhs.latitude && lhs.longitude == rhs.longitude

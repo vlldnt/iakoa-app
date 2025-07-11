@@ -147,7 +147,7 @@ struct EventServices {
         docRef.getDocument { document, error in
             if let error = error {
                 return
-                completion(.failure(error))
+                    completion(.failure(error))
             }
 
             var eventIDs: [String] = []

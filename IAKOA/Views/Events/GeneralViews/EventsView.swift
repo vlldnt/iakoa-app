@@ -7,19 +7,18 @@ struct EventView: View {
     @Binding var isLoggedIn: Bool
     @Binding var isCreator: Bool
 
+    @Binding var searchText: String
+    @Binding var selectedCity: City?
+    @Binding var selectedCategories: Set<String>
+    @Binding var searchRadius: Double
+
     @State private var events: [Event] = []
     @State private var errorMessage: String? = nil
     @State private var isLoading = false
 
     @State private var favoriteEventIDs: Set<String> = []
     @State private var selectedEvent: Event? = nil
-
-    @State private var searchText: String = ""
-    @State private var showOnlyFreeEvents = false
-    @State private var searchRadius: Double = 20
-    @State private var selectedCategories: Set<String> = []
     @State private var isSearchExpanded = false
-    @State private var selectedCity: City? = nil
 
     @FocusState private var focusedField: Field?
     @StateObject private var locationManager = LocationManagerTool()
@@ -100,27 +99,6 @@ struct EventView: View {
                     .accessibilityIdentifier("filterToggleButton")
                 }
                 .padding(.horizontal, 25)
-
-                // Button to fetch events near user location
-                if searchText.isEmpty || searchText == "Ma position actuelle" && selectedCity == nil {
-                    Button(action: {
-                        searchText = "Ma position actuelle"
-                        selectedCity = nil
-                        citySuggestions = []
-                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
-                        fetchEvents(useUserLocation: true)
-                    }) {
-                        HStack {
-                            Image(systemName: "location.fill")
-                                .foregroundColor(Color.blueIakoa)
-                            Text("Ma position actuelle")
-                                .foregroundColor(Color.blueIakoa)
-                            Spacer()
-                        }
-                        .padding(.horizontal)
-                        .padding(.vertical, 8)
-                    }
-                }
 
                 // Dropdown for city suggestions
                 if !citySuggestions.isEmpty {
@@ -237,6 +215,9 @@ struct EventView: View {
                 }
                 displayedEventCount = 8
             }
+            .onReceive(NotificationCenter.default.publisher(for: .refreshEventsView)) { _ in
+                fetchEvents()
+            }
         }
         // Keyboard toolbar
         .toolbar {
@@ -278,8 +259,7 @@ struct EventView: View {
                 searchText: textToSearch,
                 cityCoordinates: coordinates,
                 radiusInKm: radius,
-                selectedCategories: selectedCategories,
-                showOnlyFree: showOnlyFreeEvents
+                selectedCategories: selectedCategories
             ) { result in
                 DispatchQueue.main.async {
                     isLoading = false
