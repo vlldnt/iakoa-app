@@ -84,11 +84,15 @@ struct UserEventsFavoriteView: View {
     private func removeFavorite(_ event: Event) {
         isLoading = true
         UserServices.removeFavorite(eventID: event.id) { result in
-            switch result {
-            case .success:
-                favoriteEvents.removeAll { $0.id == event.id }
-            case .failure(let error):
-                errorMessage = error.localizedDescription
+            DispatchQueue.main.async {
+                switch result {
+                case .success:
+                    favoriteEvents.removeAll { $0.id == event.id }
+                    isLoading = false
+                case .failure(let error):
+                    errorMessage = error.localizedDescription
+                    isLoading = false
+                }
             }
         }
     }
