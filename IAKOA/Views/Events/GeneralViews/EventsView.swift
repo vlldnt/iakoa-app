@@ -100,6 +100,27 @@ struct EventView: View {
                 }
                 .padding(.horizontal, 25)
 
+                // Button to fetch events near user location
+                if searchText.isEmpty || searchText == "Ma position actuelle" && selectedCity == nil {
+                    Button(action: {
+                        searchText = "Ma position actuelle"
+                        selectedCity = nil
+                        citySuggestions = []
+                        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        fetchEvents(useUserLocation: true)
+                    }) {
+                        HStack {
+                            Image(systemName: "location.fill")
+                                .foregroundColor(Color.blueIakoa)
+                            Text("Ma position actuelle")
+                                .foregroundColor(Color.blueIakoa)
+                            Spacer()
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+                    }
+                }
+
                 // Dropdown for city suggestions
                 if !citySuggestions.isEmpty {
                     VStack(alignment: .leading, spacing: 0) {
