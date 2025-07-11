@@ -249,6 +249,12 @@ struct EventView: View {
                 }
             }
         }
+        .onChange(of: searchRadius) {
+            fetchEvents(useUserLocation: searchText == "Ma position actuelle" && selectedCity == nil)
+        }
+        .onChange(of: selectedCategories) {
+            fetchEvents(useUserLocation: searchText == "Ma position actuelle" && selectedCity == nil)
+        }
     }
 
     // Fetch events from backend, with filters and user location
@@ -262,10 +268,10 @@ struct EventView: View {
         let textToSearch: String
         let radius: Double
 
-        if useUserLocation {
+        if useUserLocation || searchText == "Ma position actuelle" {
             coordinates = locationManager.userLocation
             textToSearch = ""
-            radius = 30
+            radius = searchRadius
         } else {
             coordinates = selectedCity?.coordinates
             textToSearch = searchText
@@ -286,7 +292,11 @@ struct EventView: View {
                     isLoading = false
                     switch result {
                     case .success(let fetchedEvents):
-                        self.events = fetchedEvents
+                        self.events = fetchedEvents.filter { event in
+                            // Apply additional filtering for categories and radius
+                            let matchesCategory = selectedCategories.isEmpty || !selectedCategories.isDisjoint(with: event.categories)
+                            return matchesCategory
+                        }
                     case .failure(let error):
                         self.errorMessage = error.localizedDescription
                     }
