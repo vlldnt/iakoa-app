@@ -77,14 +77,6 @@ struct ProfileView: View {
                         }
                     }
                 }
-                
-                Button("Vérifier mon compte créateur") {
-                    showCreatorConfirmation = true
-                }
-                .sheet(isPresented: $showCreatorConfirmation) {
-                    CreatorConfirmationView()
-                }
-
                 Section(header: Text("Paramètres du compte")) {
                     HStack {
                         Button("Modifier mon mot de passe") {

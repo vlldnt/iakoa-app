@@ -53,7 +53,7 @@ struct Step2LocationMedia: View {
                 }
 
                 Section(header: Text("Prix de l'événement (€)")) {
-                    TextField("Prix (optionnel)", text: $eventPrice)
+                    TextField("Prix (0 si gratuit)", text: $eventPrice)
                         .keyboardType(.decimalPad)
                         .font(.system(size: 14))
                 }

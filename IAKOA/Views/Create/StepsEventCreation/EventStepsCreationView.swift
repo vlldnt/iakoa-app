@@ -6,18 +6,21 @@ import CoreLocation
 
 struct EventStepsCreationView: View {
     // Step 1:
-    @State private var eventName: String = ""
-    @State private var eventDescription: String = ""
-    @State private var eventCategories: [String] = []
+    @State private var eventName: String = "DemoDay C#25"
+    @State private var eventDescription: String = """
+Fin d'année de Fondamentaux pour les C25,
+Découvrez en direct les présentations de projet de fin d'année des étudiants Holberton.
+"""
+    @State private var eventCategories: [String] = ["découverte", "formation"]
 
     // Step 2:
     @State private var eventDates: [Date] = []
-    @State private var eventAddress: String = ""
-    @State private var eventPrice: String = ""
+    @State private var eventAddress: String = "37 Rue des Marchants, 31000 Toulouse, France"
+    @State private var eventPrice: String = "0"
 
     // Step 3:
     @State private var selectedImages: [UIImage] = []
-    @State private var websiteEvent: String = ""
+    @State private var websiteEvent: String = "https://www.holbertonschool.fr/"
 
     // User info:
     @State private var facebookLink: String = ""
