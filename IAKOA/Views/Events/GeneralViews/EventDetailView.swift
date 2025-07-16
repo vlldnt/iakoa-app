@@ -15,6 +15,8 @@ struct EventDetailView: View {
     @State private var showFullScreen = false
     @State private var imageSizes: [String: CGSize] = [:]
     @State private var showDirectionsMenu = false
+    @State private var isFavorite: Bool = false
+    @State private var isFavoriteLoading: Bool = false
     @Namespace private var directionsMenuNamespace
 
     init(event: Event, onClose: @escaping () -> Void) {
@@ -57,98 +59,103 @@ struct EventDetailView: View {
                     .padding(.horizontal, 20)
                     .padding(.vertical, 5)
 
-                    TabView {
-                        if event.imagesLinks.isEmpty {
-                            Image("playstore")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(maxWidth: .infinity)
-                                .aspectRatio(4/3, contentMode: .fit)
-                                .clipped()
-                                .cornerRadius(12)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-                                )
-                        } else {
-                            ForEach(event.imagesLinks.prefix(3), id: \.self) { link in
-                                if let url = URL(string: link) {
-                                    GeometryReader { geo in
-                                        AsyncImage(url: url) { phase in
-                                            switch phase {
-                                            case .empty:
-                                                ProgressView()
-                                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            case .success(let image):
-                                                let imageSize = imageSizes[link] ?? CGSize(width: 4, height: 3)
-                                                let imageRatio = imageSize.height / imageSize.width
-                                                let computedHeight = geo.size.width * imageRatio
+                    // --- Image principale + bouton coeur ---
+                    ZStack(alignment: .topTrailing) {
+                        TabView {
+                            if event.imagesLinks.isEmpty {
+                                Image("playstore")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(maxWidth: .infinity)
+                                    .aspectRatio(4/3, contentMode: .fit)
+                                    .clipped()
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(Color.gray.opacity(0.3), lineWidth: 1)
+                                    )
+                            } else {
+                                ForEach(event.imagesLinks.prefix(3), id: \ .self) { link in
+                                    if let url = URL(string: link) {
+                                        GeometryReader { geo in
+                                            AsyncImage(url: url) { phase in
+                                                switch phase {
+                                                case .empty:
+                                                    ProgressView()
+                                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                                case .success(let image):
+                                                    let imageSize = imageSizes[link] ?? CGSize(width: 4, height: 3)
+                                                    let imageRatio = imageSize.height / imageSize.width
+                                                    let computedHeight = geo.size.width * imageRatio
 
-                                                image
-                                                    .resizable()
-                                                    .scaledToFill()
-                                                    .frame(width: geo.size.width, height: computedHeight)
-                                                    .clipped()
-                                                    .cornerRadius(12)
-                                                    .onAppear {
-                                                        if imageSizes[link] == nil, let uiImage = image.asUIImage() {
-                                                            imageSizes[link] = uiImage.size
+                                                    image
+                                                        .resizable()
+                                                        .scaledToFill()
+                                                        .frame(width: geo.size.width, height: computedHeight)
+                                                        .clipped()
+                                                        .cornerRadius(12)
+                                                        .onAppear {
+                                                            if imageSizes[link] == nil, let uiImage = image.asUIImage() {
+                                                                imageSizes[link] = uiImage.size
+                                                            }
                                                         }
-                                                    }
-                                                    .onTapGesture {
-                                                        selectedImageURL = url
-                                                        showFullScreen = true
-                                                    }
-                                            case .failure:
-                                                Image(systemName: "photo")
-                                                    .resizable()
-                                                    .scaledToFit()
-                                                    .frame(maxWidth: .infinity)
-                                                    .aspectRatio(4/3, contentMode: .fit)
-                                                    .clipped()
-                                                    .cornerRadius(12)
-                                            @unknown default:
-                                                EmptyView()
+                                                        .onTapGesture {
+                                                            selectedImageURL = url
+                                                            showFullScreen = true
+                                                        }
+                                                case .failure:
+                                                    Image(systemName: "photo")
+                                                        .resizable()
+                                                        .scaledToFit()
+                                                        .frame(maxWidth: .infinity)
+                                                        .aspectRatio(4/3, contentMode: .fit)
+                                                        .clipped()
+                                                        .cornerRadius(12)
+                                                @unknown default:
+                                                    EmptyView()
+                                                }
                                             }
                                         }
+                                        .frame(height: 300)
                                     }
-                                    .frame(height: 300)
                                 }
                             }
                         }
+                        .tabViewStyle(PageTabViewStyle())
+                        .frame(height: 300)
                     }
-                    .tabViewStyle(PageTabViewStyle())
-                    .frame(height: 300)
 
-                    VStack(spacing: 10) {
+                    HStack(alignment: .center, spacing: 10) {
                         Text(event.name)
                             .font(.system(size: 22))
                             .bold()
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .lineLimit(2)
                             .padding(.horizontal, 10)
-
-                        HStack(spacing: 3) {
-                            ForEach(event.categories, id: \.self) { category in
-                                let data = EventCategories.dict[category]
-                                let color = Color(hex: data?.color ?? "#999999")
-                                HStack(spacing: 6) {
-                                    Image(systemName: data?.icon ?? "questionmark")
-                                        .font(.system(size: 13))
-                                        .foregroundColor(color)
-                                    Text(data?.label ?? category)
-                                        .font(.system(size: 13))
-                                        .foregroundColor(color)
-                                }
-                                .padding(.vertical, 5)
-                                .padding(.horizontal, 5)
-                                .background(color.opacity(0.2))
-                                .cornerRadius(10)
+                        Button(action: {
+                            isFavoriteLoading = true
+                            UserServices.toggleFavorite(eventID: event.id, isFavorite: isFavorite) { _ in
+                                isFavorite.toggle()
+                                isFavoriteLoading = false
                             }
+                        }) {
+                            Image(systemName: isFavorite ? "heart.fill" : "heart")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 28, height: 28)
+                                .foregroundColor(isFavorite ? .red : .gray)
+                                .padding(8)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.08), radius: 2, x: 0, y: 1)
                         }
-                        .padding(.horizontal, 10)
-                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .disabled(isFavoriteLoading)
+                        .padding(.trailing, 10)
+                    }
+                    .padding(.top, 8)
 
+                    // --- Description ---
+                    VStack(spacing: 10) {
                         HStack {
                             Text("Description:")
                                 .font(.system(size: 14))
@@ -434,6 +441,11 @@ struct EventDetailView: View {
                 }
                 .onAppear {
                     fetchCreatorName()
+                    UserServices.showFavorites { result in
+                        if case let .success(favorites) = result {
+                            isFavorite = favorites.contains(event.id)
+                        }
+                    }
                 }
             }
 

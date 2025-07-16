@@ -1,14 +1,20 @@
 import SwiftUI
-import FirebaseAuth
-import Firebase
 
 struct AuthView: View {
-    enum AuthTab { case login, signup }
+    
+    // Enum to switch between Login and Signup tabs
+    enum AuthTab {
+        case login
+        case signup
+    }
     @State private var selectedTab: AuthTab = .login
     @Binding var isLoggedIn: Bool
 
     var body: some View {
+        // Main vertical stack containing the entire authentication UI
         VStack(spacing: 32) {
+            
+            // App logo
             Image("logo-iakoa")
                 .resizable()
                 .renderingMode(.template)
@@ -16,9 +22,12 @@ struct AuthView: View {
                 .foregroundStyle(Color.blueIakoa)
                 .padding(.bottom, 9)
 
+            // ZStack for the animated background behind the tab buttons
             ZStack {
                 GeometryReader { geo in
                     let width = geo.size.width / 2
+                    
+                    // Animated background that moves based on selected tab
                     RoundedRectangle(cornerRadius: 25)
                         .fill(Color.blueIakoa)
                         .frame(width: width, height: geo.size.height)
@@ -26,6 +35,7 @@ struct AuthView: View {
                         .animation(.easeInOut(duration: 0.2), value: selectedTab)
                 }
 
+                // Horizontal stack for the login and signup tab buttons
                 HStack(spacing: 0) {
                     TabButton(title: "Se connecter", isSelected: selectedTab == .login) {
                         withAnimation(.easeInOut(duration: 0.2)) {
@@ -45,6 +55,7 @@ struct AuthView: View {
             .background(Color.gray.opacity(0.2))
             .clipShape(Capsule())
 
+            // ZStack to display either the login or signup view based on the selected tab
             ZStack {
                 if selectedTab == .login {
                     LoginView(isLoggedIn: $isLoggedIn)
@@ -55,7 +66,6 @@ struct AuthView: View {
                 }
             }
             .animation(.easeInOut(duration: 0.2), value: selectedTab)
-
         }
         .padding(15)
         .padding(.top, 30)
@@ -63,22 +73,5 @@ struct AuthView: View {
             Color.clear.frame(height: 0)
         }
         .ignoresSafeArea(.keyboard)
-    }
-
-    struct TabButton: View {
-        let title: String
-        let isSelected: Bool
-        let action: () -> Void
-
-        var body: some View {
-            Button(action: action) {
-                Text(title)
-                    .fontWeight(isSelected ? .bold : .medium)
-                    .foregroundColor(isSelected ? .white : .black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 44)
-            }
-            .contentShape(Rectangle())
-        }
     }
 }

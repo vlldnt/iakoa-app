@@ -4,7 +4,7 @@ struct EventCard: View {
     let event: Event
     let isLoggedIn: Bool
     let isCreator: Bool
-    let isFavorite: Bool          // <-- true si cet événement est dans les favoris
+    let isFavorite: Bool
     let onFavoriteToggle: () -> Void
     let onTap: () -> Void
 

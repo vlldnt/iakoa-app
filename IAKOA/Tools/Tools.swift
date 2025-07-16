@@ -2,7 +2,7 @@ import SwiftUI
 import Foundation
 import CoreLocation
 
-/// Extension to initialize a Color from a hex string
+// Extension to initialize a Color from a hex string
 extension Color {
     init(hex: String) {
         let scanner = Scanner(string: hex)
@@ -21,7 +21,7 @@ extension Color {
     static let blueIakoa = Color(hex: "#2397FF")
 }
 
-/// Extension to calculate the height of a string with a constrained width and font
+// Extension to calculate the height of a string with a constrained width and font
 extension String {
     func height(withConstrainedWidth width: CGFloat, font: UIFont) -> CGFloat {
         let constraintRect = CGSize(width: width, height: .greatestFiniteMagnitude)
@@ -35,7 +35,12 @@ extension String {
     }
 }
 
-/// UIViewRepresentable to provide a zoomable scroll view for SwiftUI content
+extension Notification.Name {
+    static let refreshEventsView = Notification.Name("refreshEventsView")
+    static let refreshMapView = Notification.Name("refreshMapView")
+}
+
+// UIViewRepresentable to provide a zoomable scroll view for SwiftUI content
 struct ZoomableScrollView<Content: View>: UIViewRepresentable {
     var content: Content
     

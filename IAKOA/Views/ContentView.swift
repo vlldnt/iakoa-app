@@ -139,12 +139,6 @@ struct ContentView: View {
     }
 }
 
-extension Notification.Name {
-    static let refreshEventsView = Notification.Name("refreshEventsView")
-    static let refreshMapView = Notification.Name("refreshMapView")
-}
-
-
 #Preview {
     ContentView()
 }
