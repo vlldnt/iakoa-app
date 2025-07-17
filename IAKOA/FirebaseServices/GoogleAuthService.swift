@@ -42,10 +42,18 @@ class GoogleAuthManager: ObservableObject {
                 if let error = error {
                     completion(.failure(error))
                 } else if let user = result?.user {
-                    let defaultName = user.displayName ?? "Utilisateur\(Int.random(in: 1000...9999))"
-                    let newUser = User(id: user.uid, name: defaultName, email: user.email ?? "")
-                    UserServices.createOrUpdateUser(newUser) { _ in
-                        completion(.success(user))
+                    let db = Firestore.firestore()
+                    let userRef = db.collection("users").document(user.uid)
+                    userRef.getDocument { snapshot, error in
+                        if let snapshot = snapshot, snapshot.exists {
+                            completion(.success(user))
+                        } else {
+                            let defaultName = user.displayName ?? "Utilisateur\(Int.random(in: 1000...9999))"
+                            let newUser = User(id: user.uid, name: defaultName, email: user.email ?? "")
+                            UserServices.createOrUpdateUser(newUser) { _ in
+                                completion(.success(user))
+                            }
+                        }
                     }
                 }
             }
