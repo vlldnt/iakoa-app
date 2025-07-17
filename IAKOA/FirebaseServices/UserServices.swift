@@ -27,47 +27,76 @@ struct UserServices {
             completion(.failure(NSError(domain: "UserServices", code: 401, userInfo: [NSLocalizedDescriptionKey: "Aucun utilisateur connecté."])))
             return
         }
+
         let uid = user.uid
         let db = Firestore.firestore()
         let storage = Storage.storage()
-        // 1. Récupère tous les événements créés par l'utilisateur
+
+        // Étape 1 : Récupère tous les events créés par cet utilisateur
         db.collection("events").whereField("creatorID", isEqualTo: uid).getDocuments { querySnapshot, error in
             if let error = error {
                 completion(.failure(error))
                 return
             }
+
             let batch = db.batch()
-            let deleteImageTasks: [()->Void] = []
+            var _: [() -> Void] = []
+            var imageDeletionErrors: [Error] = []
+            let dispatchGroup = DispatchGroup()
+
+            // Étape 2 : Prépare suppression des documents + images
             querySnapshot?.documents.forEach { document in
                 batch.deleteDocument(document.reference)
+
                 if let images = document.data()["imagesLinks"] as? [String] {
-                    UserServices.deleteImagesFromLinks(images)
+                    for imageURL in images {
+                        dispatchGroup.enter()
+                        let storageRef = storage.reference(forURL: imageURL)
+                        storageRef.delete { error in
+                            if let error = error {
+                                imageDeletionErrors.append(error)
+                            }
+                            dispatchGroup.leave()
+                        }
+                    }
                 }
             }
+
+            // Étape 3 : Commit la suppression Firestore
             batch.commit { batchError in
                 if let batchError = batchError {
                     completion(.failure(batchError))
                     return
                 }
-                for task in deleteImageTasks {
-                    task()
-                }
-                db.collection("users").document(uid).delete { dbError in
-                    if let dbError = dbError {
-                        completion(.failure(dbError))
+
+                // Étape 4 : Attendre suppression images
+                dispatchGroup.notify(queue: .main) {
+                    if !imageDeletionErrors.isEmpty {
+                        completion(.failure(imageDeletionErrors.first!))
                         return
                     }
-                    user.delete { authError in
-                        if let authError = authError {
-                            completion(.failure(authError))
-                        } else {
-                            completion(.success(()))
+
+                    // Étape 5 : Supprime le document utilisateur
+                    db.collection("users").document(uid).delete { dbError in
+                        if let dbError = dbError {
+                            completion(.failure(dbError))
+                            return
+                        }
+
+                        // Étape 6 : Supprime le compte Firebase Auth
+                        user.delete { authError in
+                            if let authError = authError {
+                                completion(.failure(authError))
+                            } else {
+                                completion(.success(()))
+                            }
                         }
                     }
                 }
             }
         }
     }
+
 
     
     static func fetchIsCreator(completion: @escaping (Bool?) -> Void) {

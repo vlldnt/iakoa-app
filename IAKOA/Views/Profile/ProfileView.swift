@@ -109,6 +109,7 @@ struct ProfileView: View {
                         showAlert: $showAlert,
                         alertText: $alertText,
                         onDeleteConfirmed: {
+                            isLoggedIn = false
                             shouldLogout = true
                         }
                     )
@@ -142,7 +143,7 @@ struct ProfileView: View {
                     title: Text("Succès"),
                     message: Text(alertText),
                     dismissButton: .default(Text("OK")) {
-                        if shouldLogout {
+                        if alertText.contains("supprimés") || shouldLogout {
                             isLoggedIn = false
                             presentationMode.wrappedValue.dismiss()
                         }
@@ -158,7 +159,6 @@ struct ProfileView: View {
                 .resizable()
                 .frame(width: 30, height: 30)
             Button(action: {
-                // Action if needed, e.g., open URL
             }) {
                 Text(username)
                     .lineLimit(1)
@@ -336,7 +336,7 @@ struct LongPressDeleteAccountButton: View {
                                         switch result {
                                         case .success:
                                             alertText = "Compte et données supprimés avec succès."
-                                            onDeleteConfirmed()
+                                            showAlert = true
                                         case .failure(let error):
                                             alertText = "Erreur lors de la suppression : \(error.localizedDescription)"
                                         }
