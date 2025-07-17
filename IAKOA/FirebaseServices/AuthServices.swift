@@ -29,8 +29,12 @@ struct AuthServices {
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
             if let error = error {
                 completion(.failure(error))
-            } else {
-                completion(.success(()))
+            } else if let user = result?.user {
+                let defaultName = "Utilisateur\(Int.random(in: 1000...9999))"
+                let newUser = User(id: user.uid, name: defaultName, email: user.email ?? "")
+                UserServices.createOrUpdateUser(newUser) { _ in
+                    completion(.success(()))
+                }
             }
         }
     }

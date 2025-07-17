@@ -42,7 +42,11 @@ class GoogleAuthManager: ObservableObject {
                 if let error = error {
                     completion(.failure(error))
                 } else if let user = result?.user {
-                    completion(.success(user))
+                    let defaultName = user.displayName ?? "Utilisateur\(Int.random(in: 1000...9999))"
+                    let newUser = User(id: user.uid, name: defaultName, email: user.email ?? "")
+                    UserServices.createOrUpdateUser(newUser) { _ in
+                        completion(.success(user))
+                    }
                 }
             }
         }

@@ -1,6 +1,7 @@
 import Foundation
 import FirebaseAuth
 import FirebaseFirestore
+import FirebaseStorage
 
 struct UserServices {
     static func createOrUpdateUser(_ user: User, completion: ((Error?) -> Void)? = nil) {
@@ -26,39 +27,36 @@ struct UserServices {
             completion(.failure(NSError(domain: "UserServices", code: 401, userInfo: [NSLocalizedDescriptionKey: "Aucun utilisateur connecté."])))
             return
         }
-
         let uid = user.uid
         let db = Firestore.firestore()
-
-        // Étape 1 : Récupère tous les événements créés par l'utilisateur
+        let storage = Storage.storage()
+        // 1. Récupère tous les événements créés par l'utilisateur
         db.collection("events").whereField("creatorID", isEqualTo: uid).getDocuments { querySnapshot, error in
             if let error = error {
                 completion(.failure(error))
                 return
             }
-
             let batch = db.batch()
-
-            // Supprime chaque document trouvé
+            let deleteImageTasks: [()->Void] = []
             querySnapshot?.documents.forEach { document in
                 batch.deleteDocument(document.reference)
+                if let images = document.data()["imagesLinks"] as? [String] {
+                    UserServices.deleteImagesFromLinks(images)
+                }
             }
-
-            // Étape 2 : Applique les suppressions en batch
             batch.commit { batchError in
                 if let batchError = batchError {
                     completion(.failure(batchError))
                     return
                 }
-
-                // Étape 3 : Supprime le document utilisateur
+                for task in deleteImageTasks {
+                    task()
+                }
                 db.collection("users").document(uid).delete { dbError in
                     if let dbError = dbError {
                         completion(.failure(dbError))
                         return
                     }
-
-                    // Étape 4 : Supprime le compte utilisateur
                     user.delete { authError in
                         if let authError = authError {
                             completion(.failure(authError))
@@ -143,6 +141,35 @@ struct UserServices {
             } else {
                 completion(.success(()))
             }
+        }
+    }
+    
+    /// Supprime toutes les images Firebase Storage à partir d'une liste de liens d'imagesLinks
+    static func deleteImagesFromLinks(_ links: [String], completion: ((Error?) -> Void)? = nil) {
+        let storage = Storage.storage()
+        let dispatchGroup = DispatchGroup()
+        var lastError: Error? = nil
+
+        for urlString in links {
+            // Extraction du chemin Storage depuis l'URL
+            if let range = urlString.range(of: "/o/"),
+               let endRange = urlString.range(of: "?") {
+                let encodedPath = urlString[range.upperBound..<endRange.lowerBound]
+                if let storagePath = encodedPath.removingPercentEncoding {
+                    let ref = storage.reference(withPath: storagePath)
+                    dispatchGroup.enter()
+                    ref.delete { error in
+                        if let error = error {
+                            lastError = error
+                        }
+                        dispatchGroup.leave()
+                    }
+                }
+            }
+        }
+
+        dispatchGroup.notify(queue: .main) {
+            completion?(lastError)
         }
     }
 }
