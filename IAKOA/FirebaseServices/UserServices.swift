@@ -26,22 +26,51 @@ struct UserServices {
             completion(.failure(NSError(domain: "UserServices", code: 401, userInfo: [NSLocalizedDescriptionKey: "Aucun utilisateur connecté."])))
             return
         }
+
         let uid = user.uid
-        user.delete { error in
+        let db = Firestore.firestore()
+
+        // Étape 1 : Récupère tous les événements créés par l'utilisateur
+        db.collection("events").whereField("creatorID", isEqualTo: uid).getDocuments { querySnapshot, error in
             if let error = error {
                 completion(.failure(error))
-            } else {
-                let db = Firestore.firestore()
+                return
+            }
+
+            let batch = db.batch()
+
+            // Supprime chaque document trouvé
+            querySnapshot?.documents.forEach { document in
+                batch.deleteDocument(document.reference)
+            }
+
+            // Étape 2 : Applique les suppressions en batch
+            batch.commit { batchError in
+                if let batchError = batchError {
+                    completion(.failure(batchError))
+                    return
+                }
+
+                // Étape 3 : Supprime le document utilisateur
                 db.collection("users").document(uid).delete { dbError in
                     if let dbError = dbError {
                         completion(.failure(dbError))
-                    } else {
-                        completion(.success(()))
+                        return
+                    }
+
+                    // Étape 4 : Supprime le compte utilisateur
+                    user.delete { authError in
+                        if let authError = authError {
+                            completion(.failure(authError))
+                        } else {
+                            completion(.success(()))
+                        }
                     }
                 }
             }
         }
     }
+
     
     static func fetchIsCreator(completion: @escaping (Bool?) -> Void) {
         guard let uid = Auth.auth().currentUser?.uid else {

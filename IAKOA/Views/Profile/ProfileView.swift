@@ -179,23 +179,37 @@ struct ProfileView: View {
         let db = Firestore.firestore()
         let userRef = db.collection("users").document(uid)
 
-        // 👇 Écoute les changements du document utilisateur en temps réel
         userRef.addSnapshotListener { snapshot, error in
             isLoading = false
 
-            if let data = snapshot?.data(), error == nil {
-                name = data["name"] as? String ?? ""
-                facebookLink = data["facebookLink"] as? String ?? ""
-                instagramLink = data["instagramLink"] as? String ?? ""
-                youtubeLink = data["youtubeLink"] as? String ?? ""
-                xLink = data["xLink"] as? String ?? ""
-                website = data["website"] as? String ?? ""
-                email = data["email"] as? String ?? Auth.auth().currentUser?.email ?? ""
-                isCreator = data["isCreator"] as? Bool ?? false
-            } else {
+            if error != nil {
                 message = "Erreur de chargement des données"
                 email = Auth.auth().currentUser?.email ?? ""
+                return
             }
+
+            guard let snapshot = snapshot, snapshot.exists, let data = snapshot.data() else {
+                name = "email"
+                facebookLink = ""
+                instagramLink = ""
+                youtubeLink = ""
+                xLink = ""
+                website = ""
+                email = Auth.auth().currentUser?.email ?? ""
+                isCreator = false
+                message = ""
+                return
+            }
+
+            name = data["name"] as? String ?? ""
+            facebookLink = data["facebookLink"] as? String ?? ""
+            instagramLink = data["instagramLink"] as? String ?? ""
+            youtubeLink = data["youtubeLink"] as? String ?? ""
+            xLink = data["xLink"] as? String ?? ""
+            website = data["website"] as? String ?? ""
+            email = data["email"] as? String ?? Auth.auth().currentUser?.email ?? ""
+            isCreator = data["isCreator"] as? Bool ?? false
+            message = ""
         }
     }
 }
